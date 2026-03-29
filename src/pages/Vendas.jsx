@@ -4,7 +4,7 @@ import { AppContext } from "../App";
 // import '../styles/Vendas.css'; // REMOVA esta linha
 
 function Vendas() {
-  const { sales, openModal, addToast } = useContext(AppContext);
+  const { sales, openModal, closeModal, addToast } = useContext(AppContext);
 
   const handleAddSale = () => {
     openModal(
@@ -17,7 +17,7 @@ function Vendas() {
           className="btn btn-gold btn-sm"
           onClick={() => {
             addToast("Venda adicionada!", "success");
-            openModal(false);
+            closeModal();
           }}
         >
           Salvar

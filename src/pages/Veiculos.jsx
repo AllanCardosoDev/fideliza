@@ -4,7 +4,7 @@ import { AppContext } from "../App";
 // import '../styles/Veiculos.css'; // REMOVA esta linha
 
 function Veiculos() {
-  const { vehicles, openModal, addToast } = useContext(AppContext);
+  const { vehicles, openModal, closeModal, addToast } = useContext(AppContext);
 
   const handleAddVehicle = () => {
     openModal(
@@ -17,7 +17,7 @@ function Veiculos() {
           className="btn btn-gold btn-sm"
           onClick={() => {
             addToast("Veículo adicionado!", "success");
-            openModal(false);
+            closeModal();
           }}
         >
           Salvar

@@ -1,63 +1,77 @@
 // src/services/api.js
-import axios from "axios";
+import { supabase } from "./supabaseClient";
 
-const API_BASE_URL = "http://localhost:3001"; // URL do seu JSON Server
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
+const wrap = async (queryPromise) => {
+  const { data, error } = await queryPromise;
+  if (error) {
+    throw error;
+  }
+  return { data };
+};
 
 // Funções para Clientes
-export const getClients = () => api.get("/clients");
-export const getClientById = (id) => api.get(`/clients/${id}`);
-export const createClient = (clientData) => api.post("/clients", clientData);
+export const getClients = () => wrap(supabase.from("clients").select("*"));
+export const getClientById = (id) =>
+  wrap(supabase.from("clients").select("*").eq("id", id).single());
+export const createClient = (clientData) =>
+  wrap(supabase.from("clients").insert(clientData));
 export const updateClient = (id, clientData) =>
-  api.put(`/clients/${id}`, clientData);
-export const deleteClient = (id) => api.delete(`/clients/${id}`);
+  wrap(supabase.from("clients").update(clientData).eq("id", id));
+export const deleteClient = (id) =>
+  wrap(supabase.from("clients").delete().eq("id", id));
 
 // Funções para Transações
-export const getTransactions = () => api.get("/transactions");
+export const getTransactions = () =>
+  wrap(supabase.from("transactions").select("*"));
 export const createTransaction = (transactionData) =>
-  api.post("/transactions", transactionData);
+  wrap(supabase.from("transactions").insert(transactionData));
 export const updateTransaction = (id, transactionData) =>
-  api.put(`/transactions/${id}`, transactionData);
-export const deleteTransaction = (id) => api.delete(`/transactions/${id}`);
+  wrap(supabase.from("transactions").update(transactionData).eq("id", id));
+export const deleteTransaction = (id) =>
+  wrap(supabase.from("transactions").delete().eq("id", id));
 
 // Funções para Empréstimos
-export const getLoans = () => api.get("/loans");
-export const createLoan = (loanData) => api.post("/loans", loanData);
-export const updateLoan = (id, loanData) => api.put(`/loans/${id}`, loanData);
-export const deleteLoan = (id) => api.delete(`/loans/${id}`);
+export const getLoans = () => wrap(supabase.from("loans").select("*"));
+export const createLoan = (loanData) =>
+  wrap(supabase.from("loans").insert(loanData));
+export const updateLoan = (id, loanData) =>
+  wrap(supabase.from("loans").update(loanData).eq("id", id));
+export const deleteLoan = (id) =>
+  wrap(supabase.from("loans").delete().eq("id", id));
 
 // Funções para Vendas
-export const getSales = () => api.get("/sales");
-export const createSale = (saleData) => api.post("/sales", saleData);
-export const updateSale = (id, saleData) => api.put(`/sales/${id}`, saleData);
-export const deleteSale = (id) => api.delete(`/sales/${id}`);
+export const getSales = () => wrap(supabase.from("sales").select("*"));
+export const createSale = (saleData) =>
+  wrap(supabase.from("sales").insert(saleData));
+export const updateSale = (id, saleData) =>
+  wrap(supabase.from("sales").update(saleData).eq("id", id));
+export const deleteSale = (id) =>
+  wrap(supabase.from("sales").delete().eq("id", id));
 
 // Funções para Veículos
-export const getVehicles = () => api.get("/vehicles");
+export const getVehicles = () => wrap(supabase.from("vehicles").select("*"));
 export const createVehicle = (vehicleData) =>
-  api.post("/vehicles", vehicleData);
+  wrap(supabase.from("vehicles").insert(vehicleData));
 export const updateVehicle = (id, vehicleData) =>
-  api.put(`/vehicles/${id}`, vehicleData);
-export const deleteVehicle = (id) => api.delete(`/vehicles/${id}`);
+  wrap(supabase.from("vehicles").update(vehicleData).eq("id", id));
+export const deleteVehicle = (id) =>
+  wrap(supabase.from("vehicles").delete().eq("id", id));
 
 // Funções para Funcionários
-export const getEmployees = () => api.get("/employees");
+export const getEmployees = () => wrap(supabase.from("employees").select("*"));
 export const createEmployee = (employeeData) =>
-  api.post("/employees", employeeData);
+  wrap(supabase.from("employees").insert(employeeData));
 export const updateEmployee = (id, employeeData) =>
-  api.put(`/employees/${id}`, employeeData);
-export const deleteEmployee = (id) => api.delete(`/employees/${id}`);
+  wrap(supabase.from("employees").update(employeeData).eq("id", id));
+export const deleteEmployee = (id) =>
+  wrap(supabase.from("employees").delete().eq("id", id));
 
 // Funções para Notificações
-export const getNotifications = () => api.get("/notifications");
+export const getNotifications = () =>
+  wrap(supabase.from("notifications").select("*"));
 export const createNotification = (notificationData) =>
-  api.post("/notifications", notificationData);
+  wrap(supabase.from("notifications").insert(notificationData));
 export const updateNotification = (id, notificationData) =>
-  api.put(`/notifications/${id}`, notificationData);
-export const deleteNotification = (id) => api.delete(`/notifications/${id}`);
+  wrap(supabase.from("notifications").update(notificationData).eq("id", id));
+export const deleteNotification = (id) =>
+  wrap(supabase.from("notifications").delete().eq("id", id));

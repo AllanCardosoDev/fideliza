@@ -25,6 +25,7 @@ import {
   getClients,
   getTransactions,
   getLoans,
+  createLoan as apiCreateLoan,
   getSales,
   getVehicles,
   getEmployees,
@@ -92,6 +93,22 @@ export default function App() {
     setModal({ isOpen: false, title: "", body: null });
   };
 
+  const createLoan = async (loanData) => {
+    try {
+      const response = await apiCreateLoan(loanData);
+      const createdLoan = Array.isArray(response.data)
+        ? response.data[0]
+        : response.data;
+      setLoans((prev) => [...prev, createdLoan]);
+      addToast("Empréstimo salvo!", "success");
+      return createdLoan;
+    } catch (error) {
+      console.error("Erro ao criar empréstimo:", error);
+      addToast("Erro ao salvar empréstimo.", "error");
+      throw error;
+    }
+  };
+
   // Função para carregar dados da API
   const loadDataFromApi = async () => {
     try {
@@ -125,7 +142,7 @@ export default function App() {
     } catch (error) {
       console.error("Erro ao carregar dados da API:", error);
       addToast(
-        "Erro ao carregar dados da API. Verifique se o JSON Server está rodando.",
+        "Erro ao carregar dados da API. Verifique a conexão com o Supabase.",
         "error",
       );
       // Opcional: Se a API falhar, você pode carregar dados mockados como fallback
@@ -190,6 +207,7 @@ export default function App() {
     setEmployees,
     notifications,
     setNotifications,
+    createLoan,
     loadDataFromApi, // Exponha a função para recarregar dados se necessário
   };
 

@@ -4,7 +4,8 @@ import { AppContext } from "../App";
 // import '../styles/Financeiro.css'; // REMOVA esta linha
 
 function Financeiro() {
-  const { transactions, openModal, addToast } = useContext(AppContext);
+  const { transactions, openModal, closeModal, addToast } =
+    useContext(AppContext);
 
   const handleAddTransaction = () => {
     openModal(
@@ -17,7 +18,7 @@ function Financeiro() {
           className="btn btn-gold btn-sm"
           onClick={() => {
             addToast("Transação adicionada!", "success");
-            openModal(false);
+            closeModal();
           }}
         >
           Salvar

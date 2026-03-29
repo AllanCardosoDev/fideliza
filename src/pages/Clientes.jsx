@@ -4,7 +4,7 @@ import { AppContext } from "../App";
 // import '../styles/Clients.css'; // REMOVA esta linha
 
 function Clientes() {
-  const { clients, addToast, openModal } = useContext(AppContext);
+  const { clients, addToast, openModal, closeModal } = useContext(AppContext);
 
   const handleAddClient = () => {
     openModal(
@@ -17,7 +17,7 @@ function Clientes() {
           className="btn btn-gold btn-sm"
           onClick={() => {
             addToast("Cliente adicionado!", "success");
-            openModal(false);
+            closeModal();
           }}
         >
           Salvar

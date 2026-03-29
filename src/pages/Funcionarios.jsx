@@ -4,7 +4,7 @@ import { AppContext } from "../App";
 // import '../styles/Funcionarios.css'; // REMOVA esta linha
 
 function Funcionarios() {
-  const { employees, openModal, addToast } = useContext(AppContext);
+  const { employees, openModal, closeModal, addToast } = useContext(AppContext);
 
   const handleAddEmployee = () => {
     openModal(
@@ -17,7 +17,7 @@ function Funcionarios() {
           className="btn btn-gold btn-sm"
           onClick={() => {
             addToast("Funcionário adicionado!", "success");
-            openModal(false);
+            closeModal();
           }}
         >
           Salvar
