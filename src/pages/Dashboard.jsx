@@ -99,9 +99,27 @@ function Dashboard() {
         .filter((l) => l.start_date && l.start_date.startsWith(key))
         .reduce((s, l) => s + (Number(l.value) || 0), 0);
 
-      const recebido = transactions
+      // Paid installments from loans that fall in this month
+      const recebidoEmprestimos = loans.reduce((sum, l) => {
+        if (!l.start_date) return sum;
+        const pmt = calcPMT(Number(l.value) || 0, (Number(l.interest_rate) || 0) / 100, Number(l.installments) || 1);
+        const paid = Number(l.paid) || 0;
+        const start = new Date(l.start_date + "T00:00:00");
+        for (let j = 1; j <= paid; j++) {
+          const installmentDate = new Date(start);
+          installmentDate.setMonth(installmentDate.getMonth() + j);
+          const dueKey = `${installmentDate.getFullYear()}-${String(installmentDate.getMonth() + 1).padStart(2, "0")}`;
+          if (dueKey === key) sum += pmt;
+        }
+        return sum;
+      }, 0);
+
+      // Income transactions for this month
+      const recebidoTransacoes = transactions
         .filter((t) => t.type === "income" && t.date && t.date.startsWith(key))
         .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+
+      const recebido = recebidoEmprestimos + recebidoTransacoes;
 
       const inadimplente = loans
         .filter((l) => l.status === "overdue" && l.start_date && l.start_date.startsWith(key))

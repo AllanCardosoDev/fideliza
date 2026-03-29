@@ -357,7 +357,7 @@ function Recebimentos() {
   } = useContext(AppContext);
 
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("overdue");
+  const [filterStatus, setFilterStatus] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
   // Local payment history (stored in localStorage for persistence)
@@ -395,12 +395,14 @@ function Recebimentos() {
   const kpis = useMemo(() => {
     const overdue = allInstallments.filter((i) => i.status === "overdue");
     const due = allInstallments.filter((i) => i.status === "due");
+    const paid = allInstallments.filter((i) => i.status === "paid");
     return {
       overdueCount: overdue.length,
       overdueAmount: overdue.reduce((s, i) => s + i.amount, 0),
       dueCount: due.length,
       dueAmount: due.reduce((s, i) => s + i.amount, 0),
-      totalReceived: payments.reduce((s, p) => s + (p.amountPaid || 0), 0),
+      totalReceived: paid.reduce((s, i) => s + i.amount, 0),
+      paidCount: paid.length,
       paymentsCount: payments.length,
     };
   }, [allInstallments, payments]);
@@ -592,7 +594,7 @@ function Recebimentos() {
           <div className="kpi-info">
             <span className="kpi-label">Total Recebido</span>
             <span className="kpi-value">{fmt(kpis.totalReceived)}</span>
-            <span className="kpi-change positive">{kpis.paymentsCount} pagamento{kpis.paymentsCount !== 1 ? "s" : ""}</span>
+            <span className="kpi-change positive">{kpis.paidCount} parcela{kpis.paidCount !== 1 ? "s" : ""} quitada{kpis.paidCount !== 1 ? "s" : ""}</span>
           </div>
         </div>
       </div>
@@ -669,7 +671,7 @@ function Recebimentos() {
             className="btn btn-outline btn-sm"
             onClick={() => {
               setSearch("");
-              setFilterStatus(activeTab === "installments" ? "overdue" : "");
+              setFilterStatus("");
               setFilterDateFrom("");
               setFilterDateTo("");
             }}
@@ -761,6 +763,16 @@ function Recebimentos() {
                               }}
                             >
                               em {diff}d
+                            </div>
+                          )}
+                          {inst.status === "paid" && (
+                            <div
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "var(--green)",
+                              }}
+                            >
+                              Pago em {fmtDate(inst.dueDate)}
                             </div>
                           )}
                         </td>

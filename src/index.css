@@ -1666,3 +1666,184 @@ select:focus {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================
+   AGENDA — Event Dots, Day View, Week View,
+   View Toggle
+   ============================================ */
+
+/* Override cal-day to allow column layout for dots */
+.cal-day {
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 6px;
+}
+
+/* Remove the old ::after single dot now that we use explicit dots */
+.cal-day.has-event::after {
+  display: none;
+}
+
+/* Colored dots container */
+.event-dots {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.event-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.event-dot-green  { background: var(--green); }
+.event-dot-red    { background: var(--red); }
+.event-dot-blue   { background: var(--blue); }
+.event-dot-gold   { background: var(--gold); }
+
+/* View mode toggle */
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.view-toggle-btn {
+  background: none;
+  border: none;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+.view-toggle-btn:hover {
+  background: var(--gold-glow);
+  color: var(--text);
+}
+.view-toggle-btn.active {
+  background: var(--gold-gradient);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Week view grid */
+.week-view {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.week-day-column {
+  background: var(--bg-secondary);
+  min-height: 160px;
+  cursor: pointer;
+  transition: background 0.15s;
+  padding-bottom: 8px;
+}
+.week-day-column:hover {
+  background: var(--bg-card-hover);
+}
+.week-day-column.today .week-day-header {
+  background: var(--gold-glow);
+}
+.week-day-header {
+  text-align: center;
+  padding: 8px 4px 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.week-day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 3px;
+}
+.week-event {
+  font-size: 0.68rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 0.15s;
+}
+.week-event:hover { opacity: 0.8; }
+.week-event-green  { background: var(--green-dim);  color: var(--green); }
+.week-event-red    { background: var(--red-dim);    color: var(--red); }
+.week-event-blue   { background: var(--blue-dim);   color: var(--blue); }
+.week-event-gold   { background: var(--gold-glow);  color: var(--gold-dark); }
+
+/* Day view event list */
+.agenda-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.agenda-event-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border-left: 4px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+  background: var(--bg-primary);
+}
+.agenda-event-item:hover {
+  background: var(--bg-card-hover);
+}
+.agenda-event-green  { border-left-color: var(--green); }
+.agenda-event-red    { border-left-color: var(--red); }
+.agenda-event-blue   { border-left-color: var(--blue); }
+.agenda-event-gold   { border-left-color: var(--gold); }
+
+.agenda-event-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+.agenda-event-info {
+  flex: 1;
+  min-width: 0;
+}
+.agenda-event-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.agenda-event-desc {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.agenda-event-amount {
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .week-view {
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .week-event {
+    font-size: 0.6rem;
+  }
+  .view-toggle-btn {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+}
