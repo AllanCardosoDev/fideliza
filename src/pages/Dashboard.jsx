@@ -1,32 +1,24 @@
 // src/pages/Dashboard.jsx
 import React, { useContext, useMemo } from "react";
-import { AppContext, ThemeContext } from "../App";
+import { AppContext } from "../App";
 import { useNavigate } from "react-router-dom";
 import { fmt, fmtDate, calcPMT } from "../utils/helpers";
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
   Legend,
-} from "chart.js";
-import { Line, Bar } from "react-chartjs-2";
-
-ChartJS.register(
-  CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend
-);
+  ResponsiveContainer,
+} from "recharts";
 
 function Dashboard() {
   const { clients, transactions, loans } = useContext(AppContext);
-  const { theme } = useContext(ThemeContext);
   const navigate = useNavigate();
-
-  const getCss = (v) =>
-    getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
   // ── KPIs calculated from real data ───────────────────────────────────────
   const kpis = useMemo(() => {
@@ -94,68 +86,31 @@ function Dashboard() {
     return items.sort((a, b) => a.due - b.due).slice(0, 8);
   }, [loans]);
 
-  // ── Chart: monthly loans by month (last 6 months) ────────────────────────
-  const chartData = useMemo(() => {
+  // ── Chart data: last 6 months ────────────────────────────────────────────
+  const monthlyChartData = useMemo(() => {
     const months = [];
     const now = new Date();
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleDateString("pt-BR", { month: "short" }) });
-    }
-    const loansByMonth = months.map(({ key }) =>
-      loans.filter((l) => l.start_date && l.start_date.startsWith(key))
-        .reduce((s, l) => s + (Number(l.value) || 0), 0)
-    );
-    const receivedByMonth = months.map(({ key }) =>
-      transactions.filter((t) => t.type === "income" && t.date && t.date.startsWith(key))
-        .reduce((s, t) => s + (Number(t.amount) || 0), 0)
-    );
-    return {
-      labels: months.map((m) => m.label),
-      datasets: [
-        {
-          label: "Emprestado",
-          data: loansByMonth,
-          borderColor: getCss("--gold"),
-          backgroundColor: getCss("--gold-glow"),
-          tension: 0.4,
-          fill: true,
-        },
-        {
-          label: "Recebido",
-          data: receivedByMonth,
-          borderColor: getCss("--green"),
-          backgroundColor: getCss("--green-dim"),
-          tension: 0.4,
-          fill: true,
-        },
-      ],
-    };
-  }, [loans, transactions, theme]); // eslint-disable-line react-hooks/exhaustive-deps
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleDateString("pt-BR", { month: "short" });
 
-  const chartOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: "top", labels: { color: getCss("--text") } },
-      tooltip: {
-        backgroundColor: getCss("--bg-secondary"),
-        titleColor: getCss("--text"),
-        bodyColor: getCss("--text-dim"),
-        borderColor: getCss("--border"),
-        borderWidth: 1,
-        callbacks: { label: (ctx) => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` },
-      },
-    },
-    scales: {
-      x: { ticks: { color: getCss("--text-dim") }, grid: { color: getCss("--border") } },
-      y: {
-        beginAtZero: true,
-        ticks: { color: getCss("--text-dim"), callback: (v) => fmt(v) },
-        grid: { color: getCss("--border") },
-      },
-    },
-  }), [theme]); // eslint-disable-line react-hooks/exhaustive-deps
+      const emprestado = loans
+        .filter((l) => l.start_date && l.start_date.startsWith(key))
+        .reduce((s, l) => s + (Number(l.value) || 0), 0);
+
+      const recebido = transactions
+        .filter((t) => t.type === "income" && t.date && t.date.startsWith(key))
+        .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+
+      const inadimplente = loans
+        .filter((l) => l.status === "overdue" && l.start_date && l.start_date.startsWith(key))
+        .reduce((s, l) => s + (Number(l.value) || 0), 0);
+
+      months.push({ mes: label, Emprestado: emprestado, Recebido: recebido, Inadimplência: inadimplente });
+    }
+    return months;
+  }, [loans, transactions]);
 
   return (
     <div className="page active">
@@ -227,21 +182,53 @@ function Dashboard() {
       </div>
 
       <div className="dashboard-grid">
-        {/* Chart */}
+        {/* Bar Chart: Monthly Loans */}
         <div className="card chart-card animate-in" style={{ "--delay": 5 }}>
           <div className="card-header">
-            <h3>Evolução Mensal</h3>
+            <h3>Empréstimos Concedidos (6 meses)</h3>
             <button className="btn-link" onClick={() => navigate("/relatorios")}>Ver Relatórios</button>
           </div>
           <div className="chart-container">
-            <Line data={chartData} options={chartOptions} />
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={monthlyChartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="mes" tick={{ fill: "var(--text-dim)", fontSize: 12 }} />
+                <YAxis tick={{ fill: "var(--text-dim)", fontSize: 11 }} tickFormatter={(v) => `R$${(v/1000).toFixed(0)}k`} />
+                <Tooltip formatter={(value) => [fmt(value), ""]} contentStyle={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)" }} />
+                <Legend />
+                <Bar dataKey="Emprestado" fill="var(--gold)" radius={[4,4,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
+        {/* Line Chart: Received vs Overdue */}
+        <div className="card chart-card animate-in" style={{ "--delay": 5 }}>
+          <div className="card-header">
+            <h3>Recebimentos vs Inadimplência (6 meses)</h3>
+            <button className="btn-link" onClick={() => navigate("/recebimentos")}>Ver Recebimentos</button>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={monthlyChartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="mes" tick={{ fill: "var(--text-dim)", fontSize: 12 }} />
+                <YAxis tick={{ fill: "var(--text-dim)", fontSize: 11 }} tickFormatter={(v) => `R$${(v/1000).toFixed(0)}k`} />
+                <Tooltip formatter={(value) => [fmt(value), ""]} contentStyle={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)" }} />
+                <Legend />
+                <Line type="monotone" dataKey="Recebido" stroke="var(--green)" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="Inadimplência" stroke="var(--red)" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div className="dashboard-grid">
         {/* Upcoming dues */}
         <div className="card animate-in" style={{ "--delay": 6 }}>
           <div className="card-header">
-            <h3>Próximos Vencimentos</h3>
+            <h3>Próximos Vencimentos (7 dias)</h3>
             <button className="btn-link" onClick={() => navigate("/emprestimos")}>Ver Todos</button>
           </div>
           <div className="transactions-list">
@@ -265,19 +252,16 @@ function Dashboard() {
               ))
             ) : (
               <p style={{ padding: "20px", textAlign: "center", color: "var(--text-dim)" }}>
-                Nenhum vencimento próximo.
+                Nenhum vencimento nos próximos 7 dias.
               </p>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Summary row */}
-      <div className="dashboard-grid" style={{ marginTop: 0 }}>
         {/* Top debtors */}
         <div className="card animate-in" style={{ "--delay": 7 }}>
           <div className="card-header">
-            <h3>Maiores Devedores</h3>
+            <h3>Maiores Devedores (Top 5)</h3>
             <button className="btn-link" onClick={() => navigate("/clientes")}>Ver Clientes</button>
           </div>
           <div className="table-wrapper">
@@ -307,8 +291,10 @@ function Dashboard() {
             </table>
           </div>
         </div>
+      </div>
 
-        {/* Quick stats */}
+      {/* Quick stats */}
+      <div className="dashboard-grid" style={{ marginTop: 0 }}>
         <div className="card animate-in" style={{ "--delay": 8 }}>
           <div className="card-header">
             <h3>Resumo Geral</h3>

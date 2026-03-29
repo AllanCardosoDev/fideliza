@@ -317,11 +317,12 @@ function Relatorios() {
 
   // Inadimplência list
   const inadimplentes = useMemo(() => {
-    return loans.filter((l) => l.status === "overdue").map((l) => {
+    const mapped = loans.filter((l) => l.status === "overdue").map((l) => {
       const pmt = calcPMT(Number(l.value) || 0, (Number(l.interest_rate) || 0) / 100, Number(l.installments) || 1);
       const remaining = ((Number(l.installments) || 0) - (Number(l.paid) || 0)) * pmt;
       return { ...l, remaining };
-    }).sort((a, b) => b.remaining - a.remaining);
+    });
+    return [...mapped].sort((a, b) => b.remaining - a.remaining);
   }, [loans]);
 
   return (
