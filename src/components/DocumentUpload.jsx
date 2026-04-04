@@ -1,14 +1,18 @@
 import React, { useState, useRef, useEffect } from "react";
 import { supabase } from "../services/supabaseClient";
 
-export function DocumentUpload({ clientId, onUploadSuccess }) {
+export function DocumentUpload({
+  clientId,
+  clientType = "autonomo",
+  onUploadSuccess,
+}) {
   const [loading, setLoading] = useState(false);
   const [documents, setDocuments] = useState([]);
-  const [selectedType, setSelectedType] = useState("RG");
+  const [selectedType, setSelectedType] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Documentos recomendados para processamento de empréstimo
-  const DOCUMENT_TYPES = [
+  // Documentos para Pessoa Física (PF/Autônomo)
+  const DOCUMENT_TYPES_PF = [
     { label: "RG", required: true, recommended: true },
     { label: "CPF", required: true, recommended: true },
     { label: "CNH", required: false, recommended: true },
@@ -19,6 +23,44 @@ export function DocumentUpload({ clientId, onUploadSuccess }) {
     { label: "Aval", required: false, recommended: false },
     { label: "Outros", required: false, recommended: false },
   ];
+
+  // Documentos para Pessoa Jurídica (PJ/Empresa)
+  const DOCUMENT_TYPES_PJ = [
+    { label: "CNPJ", required: true, recommended: true },
+    { label: "Inscrição Estadual", required: true, recommended: true },
+    { label: "Contrato Social", required: true, recommended: true },
+    {
+      label: "Certificado de Condição de Microempreendedor",
+      required: false,
+      recommended: true,
+    },
+    { label: "Alvará de Funcionamento", required: true, recommended: true },
+    {
+      label: "Comprovante de Endereço Comercial",
+      required: true,
+      recommended: true,
+    },
+    { label: "Último Balanço Patrimonial", required: false, recommended: true },
+    { label: "Extrato Bancário Empresa", required: false, recommended: true },
+    {
+      label: "Comprovante de Renda (Sócios)",
+      required: false,
+      recommended: true,
+    },
+    { label: "RG do(s) Sócio(s)", required: false, recommended: true },
+    { label: "Outros", required: false, recommended: false },
+  ];
+
+  // Selecionar tipos baseado no client_type
+  const DOCUMENT_TYPES =
+    clientType === "empresa" ? DOCUMENT_TYPES_PJ : DOCUMENT_TYPES_PF;
+
+  // Definir tipo padrão baseado no tipo de cliente
+  useEffect(() => {
+    if (selectedType === null) {
+      setSelectedType(clientType === "empresa" ? "CNPJ" : "RG");
+    }
+  }, [clientType, selectedType]);
 
   // Buscar documentos do cliente
   useEffect(() => {
@@ -154,6 +196,25 @@ export function DocumentUpload({ clientId, onUploadSuccess }) {
         marginTop: "20px",
       }}
     >
+      {/* Indicador de Tipo (PF/PJ) */}
+      <div style={{ marginBottom: "15px" }}>
+        <span
+          style={{
+            display: "inline-block",
+            padding: "6px 12px",
+            borderRadius: "4px",
+            fontSize: "13px",
+            fontWeight: "600",
+            backgroundColor: clientType === "empresa" ? "#c62828" : "#1976d2",
+            color: "white",
+          }}
+        >
+          {clientType === "empresa"
+            ? "🏢 Pessoa Jurídica (Empresa)"
+            : "👤 Pessoa Física"}
+        </span>
+      </div>
+
       {/* Aviso de Documentos Pendentes */}
       {pendingDocs.length > 0 && (
         <div

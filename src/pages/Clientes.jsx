@@ -688,6 +688,7 @@ function ClientForm({
         <div className="tab-content">
           <DocumentUpload
             clientId={editingClientId}
+            clientType={form.client_type}
             onUploadSuccess={() => {
               addToast("Documento enviado com sucesso!", "success");
             }}
