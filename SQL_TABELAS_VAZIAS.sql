@@ -139,6 +139,22 @@ CREATE TABLE IF NOT EXISTS client_assignments (
   UNIQUE(client_id, employee_id, role)
 );
 
+CREATE TABLE IF NOT EXISTS documents (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  client_id BIGINT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  employee_id BIGINT REFERENCES employees(id) ON DELETE SET NULL,
+  document_type TEXT NOT NULL,
+  file_name TEXT NOT NULL,
+  file_url TEXT NOT NULL,
+  file_size INTEGER,
+  mime_type TEXT,
+  description TEXT DEFAULT '',
+  status TEXT DEFAULT 'active',
+  uploaded_at TIMESTAMPTZ DEFAULT NOW(),
+  expires_at TIMESTAMPTZ,
+  notes TEXT DEFAULT ''
+);
+
 -- ======================================================================
 -- CRIAR ÍNDICES (Melhora Performance)
 -- ======================================================================
@@ -172,6 +188,12 @@ CREATE INDEX IF NOT EXISTS idx_client_assignments_employee_id ON client_assignme
 CREATE INDEX IF NOT EXISTS idx_client_assignments_role ON client_assignments(role);
 CREATE INDEX IF NOT EXISTS idx_client_assignments_search ON client_assignments(client_id, employee_id);
 
+CREATE INDEX IF NOT EXISTS idx_documents_client_id ON documents(client_id);
+CREATE INDEX IF NOT EXISTS idx_documents_employee_id ON documents(employee_id);
+CREATE INDEX IF NOT EXISTS idx_documents_type ON documents(document_type);
+CREATE INDEX IF NOT EXISTS idx_documents_uploaded_at ON documents(uploaded_at);
+CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
+
 -- ======================================================================
 -- DESABILITAR SECURITY (Se necessário)
 -- ======================================================================
@@ -186,6 +208,7 @@ ALTER TABLE vehicles DISABLE ROW LEVEL SECURITY;
 ALTER TABLE employees DISABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
 ALTER TABLE client_assignments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE documents DISABLE ROW LEVEL SECURITY;
 
 -- ======================================================================
 -- CONCEDER PERMISSÕES

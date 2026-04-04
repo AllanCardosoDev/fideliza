@@ -7,6 +7,7 @@ import React, {
   useEffect,
 } from "react";
 import { AppContext } from "../App";
+import { DocumentUpload } from "../components/DocumentUpload";
 import {
   maskCpfCnpj,
   maskPhone,
@@ -127,6 +128,7 @@ function ClientForm({
   onSave,
   onCancel,
   isSaving,
+  editingClientId,
 }) {
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState({});
@@ -308,6 +310,19 @@ function ClientForm({
         >
           <span>3. Dados Adicionais</span>
           {tab3Valid && <span className="tab-check">✓</span>}
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === 3 ? "active" : ""}`}
+          onClick={() => setActiveTab(3)}
+          disabled={!editingClientId}
+          title={
+            editingClientId
+              ? "Documentos do cliente"
+              : "Salve o cliente primeiro"
+          }
+        >
+          <span>4. Documentos</span>
         </button>
       </div>
 
@@ -668,6 +683,18 @@ function ClientForm({
         </div>
       )}
 
+      {/* Tab 4: Documentos */}
+      {activeTab === 3 && editingClientId && (
+        <div className="tab-content">
+          <DocumentUpload
+            clientId={editingClientId}
+            onUploadSuccess={() => {
+              addToast("Documento enviado com sucesso!", "success");
+            }}
+          />
+        </div>
+      )}
+
       {/* Actions */}
       <div className="form-actions">
         <button
@@ -688,8 +715,8 @@ function ClientForm({
         <button
           type="button"
           className="btn btn-outline btn-sm"
-          onClick={() => setActiveTab(Math.min(2, activeTab + 1))}
-          disabled={activeTab === 2}
+          onClick={() => setActiveTab(Math.min(3, activeTab + 1))}
+          disabled={activeTab === 3}
         >
           Próximo →
         </button>
@@ -864,6 +891,7 @@ function Clientes() {
         }}
         onCancel={closeModal}
         isSaving={isSaving}
+        editingClientId={client.id}
       />,
     );
   };
