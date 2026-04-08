@@ -7,7 +7,6 @@ import React, {
   useEffect,
 } from "react";
 import { AppContext } from "../App";
-import { DocumentUpload } from "../components/DocumentUpload";
 import {
   maskCpfCnpj,
   maskPhone,
@@ -278,18 +277,6 @@ function ClientForm({
         >
           <span>3. Dados Adicionais</span>
           {tab3Valid && <span className="tab-check">✓</span>}
-        </button>
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 3 ? "active" : ""}`}
-          onClick={() => setActiveTab(3)}
-          title={
-            editingClientId
-              ? "Documentos do cliente"
-              : "Salve o cliente para fazer upload de documentos"
-          }
-        >
-          <span>4. Documentos</span>
         </button>
       </div>
 
@@ -684,78 +671,6 @@ function ClientForm({
         </div>
       )}
 
-      {/* Tab 4: Documentos */}
-      {activeTab === 3 && (
-        <div className="tab-content">
-          {editingClientId ? (
-            <DocumentUpload
-              clientId={editingClientId}
-              clientType={form.client_type}
-              currentUser={currentUser}
-              onUploadSuccess={() => {
-                console.log("✅ Documento enviado com sucesso!");
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                padding: "40px 20px",
-                textAlign: "center",
-                backgroundColor: "#f5f5f5",
-                borderRadius: "8px",
-                marginTop: "20px",
-              }}
-            >
-              <div style={{ fontSize: "48px", marginBottom: "10px" }}>📄</div>
-              <h3>Documentos</h3>
-              <p style={{ color: "#666", marginTop: "10px" }}>
-                Salve o cliente antes de adicionar documentos.
-              </p>
-              <p style={{ fontSize: "13px", color: "#999", marginTop: "20px" }}>
-                Após salvar, você poderá fazer upload de:
-              </p>
-              <div
-                style={{
-                  marginTop: "15px",
-                  textAlign: "left",
-                  display: "inline-block",
-                  backgroundColor: "white",
-                  padding: "15px 20px",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                }}
-              >
-                <div>
-                  <strong>
-                    Tipo:{" "}
-                    {form.client_type === "empresa"
-                      ? "Pessoa Jurídica"
-                      : "Pessoa Física"}
-                  </strong>
-                </div>
-                <div style={{ marginTop: "10px", color: "#666" }}>
-                  {form.client_type === "empresa" ? (
-                    <>
-                      • CNPJ, Contrato Social, Alvará
-                      <br />
-                      • Inscrição Estadual, Comprovantes
-                      <br />• Balanço Patrimonial, RG dos Sócios
-                    </>
-                  ) : (
-                    <>
-                      • RG, CPF, Comprovante de Renda
-                      <br />
-                      • Comprovante de Endereço
-                      <br />• CNH, Extrato Bancário e mais
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Actions */}
       <div className="form-actions">
         <button
@@ -776,8 +691,8 @@ function ClientForm({
         <button
           type="button"
           className="btn btn-outline btn-sm"
-          onClick={() => setActiveTab(Math.min(3, activeTab + 1))}
-          disabled={activeTab === 3}
+          onClick={() => setActiveTab(Math.min(2, activeTab + 1))}
+          disabled={activeTab === 2}
         >
           Próximo →
         </button>

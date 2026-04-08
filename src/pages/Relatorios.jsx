@@ -29,7 +29,7 @@ ChartJS.register(
 );
 
 function Relatorios() {
-  const { loans, clients, transactions, currentUser, userRole } =
+  const { loans, clients, transactions, currentUser, userRole, caixa } =
     useContext(AppContext);
   const { theme } = useContext(ThemeContext);
 
@@ -601,50 +601,89 @@ function Relatorios() {
           month: "short",
           year: "2-digit",
         }),
+        received: 0,
+        loaned: 0,
       });
     }
 
-    let cashBalance = 1000000; // Initial cash (1M)
+    const firstKey = months[0].key;
+    const monthMap = Object.fromEntries(months.map((m) => [m.key, m]));
+
+    // Saídas: desembolso do empréstimo (pré-janela → agrega no primeiro mês)
+    accessibleLoans
+      .filter(
+        (l) => ["active", "overdue", "paid"].includes(l.status) && l.start_date,
+      )
+      .forEach((l) => {
+        const mk = l.start_date.slice(0, 7);
+        const target = monthMap[mk] ? mk : mk < firstKey ? firstKey : null;
+        if (target) monthMap[target].loaned += Number(l.value) || 0;
+      });
+
+    // Entradas: parcelas pagas (pré-janela → agrega no primeiro mês)
+    allInstallments
+      .filter((i) => i.status === "paid" && i.dueDate)
+      .forEach((i) => {
+        const mk = i.dueDate.slice(0, 7);
+        const target = monthMap[mk] ? mk : mk < firstKey ? firstKey : null;
+        if (target) monthMap[target].received += i.amount;
+      });
+
+    let cashBalance = Number(caixa) || 0;
     const balances = [];
 
     months.forEach(({ key }) => {
-      // Loan disbursements (saídas)
-      const loaned = loans
-        .filter((l) => l.start_date && l.start_date.startsWith(key))
-        .reduce((s, l) => s + (Number(l.value) || 0), 0);
-
-      // Payments received (entradas)
-      const received = allInstallments
-        .filter(
-          (i) => i.status === "paid" && i.dueDate && i.dueDate.startsWith(key),
-        )
-        .reduce((s, i) => s + i.amount, 0);
-
-      // Balance = Previous + Received - Loaned
-      cashBalance = cashBalance + received - loaned;
+      cashBalance = cashBalance + monthMap[key].received - monthMap[key].loaned;
       balances.push(cashBalance);
     });
 
     return {
       labels: months.map((m) => m.label),
       balances,
+      monthlyLoaned: months.map(({ key }) => monthMap[key].loaned),
+      monthlyReceived: months.map(({ key }) => monthMap[key].received),
     };
-  }, [accessibleLoans, allInstallments]);
+  }, [accessibleLoans, allInstallments, caixa]);
 
   const lineData = {
     labels: fluxoCaixa.labels,
     datasets: [
       {
-        label: "Saldo de Caixa",
+        label: "Entradas",
+        data: fluxoCaixa.monthlyReceived,
+        backgroundColor: "rgba(56, 142, 60, 0.8)",
+        borderColor: "rgb(56, 142, 60)",
+        borderWidth: 2,
+        borderRadius: 4,
+        type: "bar",
+        yAxisID: "y",
+      },
+      {
+        label: "Saídas",
+        data: fluxoCaixa.monthlyLoaned,
+        backgroundColor: "rgba(211, 47, 47, 0.8)",
+        borderColor: "rgb(211, 47, 47)",
+        borderWidth: 2,
+        borderRadius: 4,
+        type: "bar",
+        yAxisID: "y",
+      },
+      {
+        label: "Saldo",
         data: fluxoCaixa.balances,
-        borderColor: getCss("--gold"),
-        backgroundColor: "rgba(255, 165, 0, 0.1)",
-        pointBackgroundColor: getCss("--gold"),
-        pointBorderColor: getCss("--bg-primary"),
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        tension: 0.4,
+        borderColor: "rgba(33, 150, 243, 1)",
+        backgroundColor: "rgba(33, 150, 243, 0.1)",
+        borderWidth: 3,
         fill: true,
+        tension: 0.4,
+        type: "line",
+        yAxisID: "y1",
+        pointRadius: 5,
+        pointBackgroundColor: fluxoCaixa.balances.map((v) =>
+          v >= 0 ? "rgb(56, 142, 60)" : "rgb(211, 47, 47)",
+        ),
+        pointBorderWidth: 2,
+        pointBorderColor: "white",
       },
     ],
   };
@@ -661,7 +700,7 @@ function Relatorios() {
         borderColor: getCss("--border"),
         borderWidth: 1,
         callbacks: {
-          label: (ctx) => `Saldo: ${fmt(ctx.parsed.y)}`,
+          label: (ctx) => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`,
         },
       },
     },
@@ -671,8 +710,14 @@ function Relatorios() {
         grid: { color: `${getCss("--border")}40` },
       },
       y: {
+        position: "left",
         ticks: { color: getCss("--text-dim"), callback: (v) => fmt(v) },
         grid: { color: `${getCss("--border")}40` },
+      },
+      y1: {
+        position: "right",
+        ticks: { color: getCss("--text-dim"), callback: (v) => fmt(v) },
+        grid: { drawOnChartArea: false },
       },
     },
   };
@@ -1059,7 +1104,7 @@ function Relatorios() {
           <h3>💰 Fluxo de Caixa (12 últimos meses)</h3>
         </div>
         <div className="chart-container" style={{ height: "300px" }}>
-          <Line data={lineData} options={lineOptions} />
+          <Bar data={lineData} options={lineOptions} />
         </div>
       </div>
 

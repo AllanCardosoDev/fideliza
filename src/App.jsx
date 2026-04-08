@@ -6,12 +6,16 @@ import React, {
   useContext,
   useCallback,
 } from "react";
-import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import "./index.css";
 
 import LoginScreen from "./components/LoginScreen";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
+import LandingFull from "./pages/LandingFull";
+import LandingSobre from "./pages/LandingSobre";
+import LandingServicos from "./pages/LandingServicos";
+import LandingSimulador from "./pages/LandingSimulador";
 import Clientes from "./pages/Clientes";
 import Financeiro from "./pages/Financeiro";
 import Emprestimos from "./pages/Emprestimos";
@@ -60,7 +64,9 @@ export const ThemeContext = createContext(null);
 // ProtectedLayout defined outside App to avoid creating components during render
 function ProtectedLayout() {
   const { isAuthenticated } = useContext(AppContext);
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  const location = useLocation();
+  if (!isAuthenticated)
+    return <Navigate to="/login" state={{ from: location }} replace />;
   return (
     <AppLayout>
       <Outlet />
@@ -1053,31 +1059,27 @@ export default function App() {
       <ThemeContext.Provider value={{ theme, toggleTheme }}>
         <div id="root-container">
           <Routes>
-            <Route
-              path="/login"
-              element={
-                isAuthenticated ? (
-                  <Navigate to="/dashboard" replace />
-                ) : (
-                  <LoginScreen />
-                )
-              }
-            />
-            <Route path="/" element={<ProtectedLayout />}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="clientes" element={<Clientes />} />
-              <Route path="financeiro" element={<Financeiro />} />
-              <Route path="emprestimos" element={<Emprestimos />} />
-              <Route path="simulador" element={<Simulador />} />
-              <Route path="cobrancas" element={<Cobrancas />} />
-              <Route path="recebimentos" element={<Recebimentos />} />
-              <Route path="funcionarios" element={<Funcionarios />} />
-              <Route path="relatorios" element={<Relatorios />} />
-              <Route path="agenda" element={<Agenda />} />
-              <Route path="configuracoes" element={<Configuracoes />} />
-              <Route path="*" element={<NotFound />} />
+            <Route path="/login" element={<LoginScreen />} />
+            <Route path="/" element={<LandingFull />} />
+            <Route path="/sobre" element={<LandingSobre />} />
+            <Route path="/servicos" element={<LandingServicos />} />
+            <Route path="/simular" element={<LandingSimulador />} />
+
+            {/* Protected routes wrapped by ProtectedLayout (no path on parent) */}
+            <Route element={<ProtectedLayout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/clientes" element={<Clientes />} />
+              <Route path="/financeiro" element={<Financeiro />} />
+              <Route path="/emprestimos" element={<Emprestimos />} />
+              <Route path="/simulador" element={<Simulador />} />
+              <Route path="/cobrancas" element={<Cobrancas />} />
+              <Route path="/recebimentos" element={<Recebimentos />} />
+              <Route path="/funcionarios" element={<Funcionarios />} />
+              <Route path="/relatorios" element={<Relatorios />} />
+              <Route path="/agenda" element={<Agenda />} />
+              <Route path="/configuracoes" element={<Configuracoes />} />
             </Route>
+
             <Route
               path="*"
               element={

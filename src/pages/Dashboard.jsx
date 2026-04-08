@@ -12,6 +12,9 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
+  Filler,
   Title,
   Tooltip,
   Legend,
@@ -22,71 +25,95 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
+  Filler,
   Title,
   Tooltip,
   Legend,
 );
 
 // ── Helper: Build monthly cash flow ────────────────────────────────────────
-const buildMonthlyCashFlow = (loans, transactions, today) => {
+// Entradas = parcelas pagas (mesma base do KPI totalRecebido)
+// Saídas   = valores liberados de empréstimos (mesma base do KPI totalEmprestado)
+// Saldo    = acumulado partindo do caixaInicial → último ponto = caixaDisponível
+const buildMonthlyCashFlow = (loans, transactions, caixaInicial, today) => {
+  // Monta os 3 meses do período (ordem crescente)
+  const monthKeys = [];
   const months = {};
-
-  // Initialize last 3 months
-  for (let i = 0; i < 3; i++) {
+  for (let i = 2; i >= 0; i--) {
     const d = new Date(today);
     d.setMonth(d.getMonth() - i);
-    const monthKey = d.toISOString().split("T")[0].slice(0, 7);
-    months[monthKey] = {
+    const key = d.toISOString().split("T")[0].slice(0, 7);
+    months[key] = {
       income: 0,
       expense: 0,
       label: d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
     };
+    monthKeys.push(key);
   }
+  const firstMonth = monthKeys[0];
 
-  // Add transactions
-  if (Array.isArray(transactions)) {
-    transactions.forEach((t) => {
-      const date = new Date(t.date);
-      const monthKey = date.toISOString().split("T")[0].slice(0, 7);
-      if (months[monthKey]) {
-        const amount = Number(t.amount) || 0;
-        if (t.type === "income") {
-          months[monthKey].income += amount;
-        } else {
-          months[monthKey].expense += amount;
-        }
-      }
-    });
-  }
-
-  // Add loans as expenses (disbursements)
-  if (Array.isArray(loans)) {
-    loans
-      .filter(
+  const validLoans = Array.isArray(loans)
+    ? loans.filter(
         (l) =>
           l.status === "active" ||
           l.status === "overdue" ||
           l.status === "paid",
       )
-      .forEach((l) => {
-        const date = new Date(l.start_date + "T00:00:00");
-        const monthKey = date.toISOString().split("T")[0].slice(0, 7);
-        if (months[monthKey]) {
-          months[monthKey].expense += Number(l.value) || 0;
-        }
-      });
+    : [];
+
+  // Entradas: parcelas pagas — evento na data de vencimento calculada
+  validLoans.forEach((l) => {
+    const v = Number(l.value) || 0;
+    const rate = (Number(l.interest_rate) || 0) / 100;
+    const n = Number(l.installments) || 0;
+    const paid = Number(l.paid) || 0;
+    if (!v || !n || !l.start_date) return;
+    const pmt = calcPMT(v, rate, n);
+    const start = new Date(l.start_date + "T00:00:00");
+    for (let i = 1; i <= paid; i++) {
+      const due = new Date(start);
+      due.setMonth(due.getMonth() + (i - 1));
+      const mk = due.toISOString().split("T")[0].slice(0, 7);
+      // Se caiu antes da janela → agrega no primeiro mês visível
+      const target = months[mk] ? mk : mk < firstMonth ? firstMonth : null;
+      if (target) months[target].income += pmt;
+    }
+  });
+
+  // Saídas: desembolso do empréstimo na data de início
+  validLoans.forEach((l) => {
+    if (!l.start_date) return;
+    const mk = l.start_date.slice(0, 7);
+    const target = months[mk] ? mk : mk < firstMonth ? firstMonth : null;
+    if (target) months[target].expense += Number(l.value) || 0;
+  });
+
+  // Transações manuais
+  if (Array.isArray(transactions)) {
+    transactions.forEach((t) => {
+      const mk = new Date(t.date).toISOString().split("T")[0].slice(0, 7);
+      const target = months[mk] ? mk : mk < firstMonth ? firstMonth : null;
+      if (!target) return;
+      const amount = Number(t.amount) || 0;
+      if (t.type === "income") months[target].income += amount;
+      else months[target].expense += amount;
+    });
   }
 
-  // Return sorted by month ascending
-  return Object.keys(months)
-    .sort()
-    .map((key) => ({
+  // Saldo acumulado partindo do caixaInicial
+  let runningSaldo = Number(caixaInicial) || 0;
+  return monthKeys.map((key) => {
+    runningSaldo = runningSaldo + months[key].income - months[key].expense;
+    return {
       month: months[key].label,
       monthKey: key,
       income: months[key].income,
       expense: months[key].expense,
-      saldo: months[key].income - months[key].expense,
-    }));
+      saldo: runningSaldo,
+    };
+  });
 };
 
 function Dashboard() {
@@ -191,8 +218,13 @@ function Dashboard() {
 
   // ── Monthly Cash Flow (Last 3 months) ──────────────────────────────────────
   const monthlyCashFlow = useMemo(() => {
-    return buildMonthlyCashFlow(accessibleLoans, transactions, today);
-  }, [accessibleLoans, transactions, today]);
+    return buildMonthlyCashFlow(
+      accessibleLoans,
+      transactions,
+      Number(caixa) || 0,
+      today,
+    );
+  }, [accessibleLoans, transactions, caixa, today]);
 
   // ── Chart Data for Cash Flow ──────────────────────────────────────────────
   const cashFlowChartData = useMemo(() => {
@@ -311,48 +343,179 @@ function Dashboard() {
   }, [kpis, today]);
 
   const handleExportFinanceiro = () => {
-    const dataToExport = accessibleLoans.map((l) => ({
-      Cliente: getClientName(l.client),
-      "Valor (R$)": Number(l.value),
-      Status:
-        l.status === "active"
-          ? "Ativo"
-          : l.status === "overdue"
-            ? "Atrasado"
-            : l.status === "paid"
-              ? "Pago"
-              : "Pendente/Cancelado",
-      Taxa: Number(l.interest_rate) + "%",
-      Parcelas: `${l.installments}x`,
-      Pagas: l.paid,
-      "Data Emissão": l.start_date ? fmtDate(l.start_date) : "-",
-    }));
+    const dataAtual = new Date();
+    const allInstallments = kpis.allInstallments || [];
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Emprestimos");
+    // ── Aba 1: Resumo Executivo ──────────────────────────────────────────────
+    const resumoData = [
+      {
+        Indicador: "Data do Relatório",
+        Valor: dataAtual.toLocaleDateString("pt-BR"),
+      },
+      { Indicador: "Caixa Disponível", Valor: fmt(kpis.caixaDisponivel) },
+      { Indicador: "Total Emprestado", Valor: fmt(kpis.totalEmprestado) },
+      { Indicador: "Total Recebido", Valor: fmt(kpis.totalRecebido) },
+      { Indicador: "Total a Receber", Valor: fmt(kpis.totalAReceber) },
+      { Indicador: "Em Atraso", Valor: fmt(kpis.totalEmAtraso) },
+      {
+        Indicador: "Juros Recebidos",
+        Valor: fmt(kpis.totalInterestReceived),
+      },
+      { Indicador: "Lucro Bruto", Valor: fmt(kpis.grossProfit) },
+      {
+        Indicador: "Margem de Lucro",
+        Valor: (kpis.profitMargin || 0).toFixed(1) + "%",
+      },
+      {
+        Indicador: "Taxa de Recebimento",
+        Valor: (kpis.recoveryRate || 0).toFixed(1) + "%",
+      },
+      { Indicador: "Clientes Ativos", Valor: kpis.activeClients },
+      { Indicador: "Empréstimos Ativos", Valor: kpis.activeLoansCount },
+      { Indicador: "Parcelas Pagas", Valor: kpis.paidCount },
+      { Indicador: "Parcelas em Atraso", Valor: kpis.overdueCount },
+      { Indicador: "Parcelas a Vencer", Valor: kpis.dueCount },
+      {
+        Indicador: "Score de Saúde Financeira",
+        Valor: kpis.healthScore + "/100 (" + (kpis.healthStatus || "-") + ")",
+      },
+      {
+        Indicador: "Concentração Top 3 Clientes",
+        Valor: (kpis.carrickConcentration || 0).toFixed(1) + "%",
+      },
+      {
+        Indicador: "Receita Manual (Transações)",
+        Valor: fmt(kpis.txIncome),
+      },
+      {
+        Indicador: "Despesa Manual (Transações)",
+        Valor: fmt(kpis.txExpense),
+      },
+    ];
 
-    const installmentsData = allInstallments.map((i) => ({
+    // ── Aba 2: Empréstimos ────────────────────────────────────────────────────
+    const emprestimosData = accessibleLoans.map((l) => {
+      const pmt = calcPMT(
+        Number(l.value) || 0,
+        (Number(l.interest_rate) || 0) / 100,
+        Number(l.installments) || 1,
+      );
+      const remaining =
+        ((Number(l.installments) || 0) - (Number(l.paid) || 0)) * pmt;
+      return {
+        Cliente: getClientName(l.client),
+        "Valor Liberado (R$)": Number(l.value),
+        Status:
+          l.status === "active"
+            ? "Ativo"
+            : l.status === "overdue"
+              ? "Atrasado"
+              : l.status === "paid"
+                ? "Pago"
+                : "Pendente/Cancelado",
+        "Taxa de Juros": Number(l.interest_rate) + "%",
+        "Nº de Parcelas": l.installments,
+        "Parcelas Pagas": l.paid,
+        "Parcela Mensal (R$)": pmt.toFixed(2),
+        "Saldo Restante (R$)": remaining.toFixed(2),
+        "Data de Emissão": l.start_date ? fmtDate(l.start_date) : "-",
+        Protocolo: l.protocol || "-",
+      };
+    });
+
+    // ── Aba 3: Todas as Parcelas ──────────────────────────────────────────────
+    const parcelasData = allInstallments.map((i) => ({
       Cliente: i.client,
       Parcela: `${i.installmentNo}/${i.totalInstallments}`,
-      "Valor (R$)": i.amount,
+      "Valor (R$)": i.amount.toFixed(2),
       Vencimento: fmtDate(i.dueDate),
       Status:
         i.status === "paid"
-          ? "Pago"
+          ? "Paga"
           : i.status === "overdue"
-            ? "Atrasado"
-            : "Pendente",
+            ? "Atrasada"
+            : "A Vencer",
     }));
 
-    if (installmentsData.length > 0) {
-      const worksheet2 = XLSX.utils.json_to_sheet(installmentsData);
-      XLSX.utils.book_append_sheet(workbook, worksheet2, "Parcelas");
-    }
+    // ── Aba 4: Inadimplência ──────────────────────────────────────────────────
+    const inadimplenciaData = allInstallments
+      .filter((i) => i.status === "overdue")
+      .map((i) => {
+        const daysOverdue = Math.ceil(
+          (today - new Date(i.dueDate)) / (1000 * 60 * 60 * 24),
+        );
+        return {
+          Cliente: i.client,
+          Parcela: `${i.installmentNo}/${i.totalInstallments}`,
+          "Valor (R$)": i.amount.toFixed(2),
+          Vencimento: fmtDate(i.dueDate),
+          "Dias em Atraso": daysOverdue,
+          Categoria:
+            daysOverdue <= 7
+              ? "Leve (1-7 dias)"
+              : daysOverdue <= 14
+                ? "Moderado (8-14 dias)"
+                : daysOverdue <= 30
+                  ? "Grave (15-30 dias)"
+                  : "Crítico (30+ dias)",
+        };
+      })
+      .sort((a, b) => b["Dias em Atraso"] - a["Dias em Atraso"]);
+
+    // ── Aba 5: Próximos Vencimentos ───────────────────────────────────────────
+    const vencimentosData = upcomingDues.map((item) => ({
+      Cliente: getClientName(item.loan.client),
+      Parcela: `${item.installmentNo}/${item.loan.installments}`,
+      "Valor (R$)": item.pmt.toFixed(2),
+      Vencimento: fmtDate(item.due.toISOString().split("T")[0]),
+      "Dias p/ Vencimento": item.diff,
+      Situação:
+        item.diff < 0
+          ? "Atrasado"
+          : item.diff === 0
+            ? "Vence Hoje"
+            : item.diff <= 7
+              ? "Urgente"
+              : "Normal",
+    }));
+
+    // ── Aba 6: Maiores Devedores ──────────────────────────────────────────────
+    const devedoresData = topDebtors.map(([name, total], idx) => ({
+      Posição: idx + 1,
+      Cliente: name,
+      "Saldo Devedor (R$)": total.toFixed(2),
+    }));
+
+    // ── Aba 7: Fluxo de Caixa (últimos 3 meses) ───────────────────────────────
+    const fluxoData = monthlyCashFlow.map((m) => ({
+      Mês: m.month,
+      "Entradas (R$)": m.income.toFixed(2),
+      "Saídas (R$)": m.expense.toFixed(2),
+      "Saldo Acumulado (R$)": m.saldo.toFixed(2),
+    }));
+
+    // ── Montar workbook ────────────────────────────────────────────────────────
+    const workbook = XLSX.utils.book_new();
+    const addSheet = (data, sheetName) => {
+      if (data.length === 0) return;
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(data),
+        sheetName,
+      );
+    };
+
+    addSheet(resumoData, "Resumo");
+    addSheet(emprestimosData, "Empréstimos");
+    addSheet(parcelasData, "Parcelas");
+    addSheet(inadimplenciaData, "Inadimplência");
+    addSheet(vencimentosData, "Próx. Vencimentos");
+    addSheet(devedoresData, "Maiores Devedores");
+    addSheet(fluxoData, "Fluxo de Caixa");
 
     XLSX.writeFile(
       workbook,
-      `Relatorio_Financeiro_${new Date().toISOString().split("T")[0]}.xlsx`,
+      `Dashboard_Completo_${dataAtual.toISOString().split("T")[0]}.xlsx`,
     );
   };
 

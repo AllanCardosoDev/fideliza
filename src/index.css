@@ -356,6 +356,31 @@ a {
   -webkit-backdrop-filter: blur(18px);
   box-shadow: var(--shadow-lg);
 }
+/* alias used by projeto layout */
+.glass-card {
+  position: relative;
+  z-index: 2;
+  width: 380px;
+  max-width: 90%;
+  padding: 32px 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-lg);
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+.back-link:hover {
+  color: var(--gold);
+}
 .login-logo {
   text-align: center;
   margin-bottom: 28px;
@@ -1590,12 +1615,20 @@ select:focus {
 }
 
 /* Transaction amounts */
-.tx-income { color: var(--green); }
-.tx-expense { color: var(--red); }
+.tx-income {
+  color: var(--green);
+}
+.tx-expense {
+  color: var(--red);
+}
 
 /* Text utilities */
-.text-dim { color: var(--text-dim); }
-.text-warning { color: var(--orange); }
+.text-dim {
+  color: var(--text-dim);
+}
+.text-warning {
+  color: var(--orange);
+}
 
 /* btn-danger */
 .btn-danger {
@@ -1609,11 +1642,18 @@ select:focus {
   transition: opacity 0.2s;
 }
 
-.btn-danger:hover { opacity: 0.85; }
-.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-danger:hover {
+  opacity: 0.85;
+}
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 /* KPI neutral change */
-.kpi-change.neutral { color: var(--text-dim); }
+.kpi-change.neutral {
+  color: var(--text-dim);
+}
 
 /* Card body */
 .card-body {

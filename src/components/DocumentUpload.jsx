@@ -3,6 +3,7 @@ import { supabase } from "../services/supabaseClient";
 
 export function DocumentUpload({
   clientId,
+  clientName = "",
   clientType = "autonomo",
   onUploadSuccess,
   currentUser = null,
@@ -117,112 +118,65 @@ export function DocumentUpload({
       setLoading(true);
       setUploadError(null);
 
-      console.log("📤 Iniciando upload:", {
-        clientId,
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type,
-        documentType: selectedType,
-        employeeId: currentUser?.id || "sem-user",
+      // 1. Upload para o Google Drive via Supabase Edge Function
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("clientId", String(clientId));
+      formData.append("clientName", clientName || `cliente_${clientId}`);
+      formData.append("documentType", selectedType || "documento");
+
+      const edgeFnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-to-drive`;
+      const response = await fetch(edgeFnUrl, {
+        method: "POST",
+        headers: {
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: formData,
       });
 
-      // 1. Upload para Supabase Storage
-      const timestamp = Date.now();
-      const fileName = `client_${clientId}_${timestamp}_${file.name}`;
-      const path = `${clientId}/${fileName}`;
-
-      console.log("📁 Caminho do arquivo:", path);
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("documents")
-        .upload(path, file);
-
-      if (uploadError) {
-        console.error("❌ Erro de upload:", uploadError);
-
-        // Verificar se é erro de bucket não encontrado
-        if (
-          uploadError.message?.includes("Bucket not found") ||
-          uploadError.statusCode === 400
-        ) {
-          const errorMsg =
-            "❌ ERRO: Bucket 'documents' não existe no Supabase!\n\n" +
-            "Para resolver:\n" +
-            "1. Abra: https://supabase.com/dashboard\n" +
-            "2. Vá em: Storage > Create new bucket\n" +
-            "3. Nome: 'documents' (minúsculas)\n" +
-            "4. Privacy: 'Private'\n" +
-            "5. Clique: Create Bucket\n\n" +
-            "Depois recarregue a página (F5) e tente novamente.";
-          throw new Error(errorMsg);
-        }
-
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
         throw new Error(
-          uploadError.message || "Erro ao fazer upload do arquivo",
+          errJson.error ||
+            `Erro HTTP ${response.status} ao enviar para o Google Drive`,
         );
       }
 
-      console.log("✅ Upload concluído:", uploadData);
-
-      // 2. Obter URL pública
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("documents").getPublicUrl(path);
-
-      console.log("🔗 URL pública:", publicUrl);
-
-      if (!publicUrl) {
-        throw new Error("Não foi possível obter a URL do arquivo");
-      }
-
-      // 3. Salvar metadados na tabela documents
-      console.log("💾 Salvando documento no banco de dados:", {
-        client_id: clientId,
-        employee_id: currentUser?.id || null,
-        document_type: selectedType,
-        file_name: file.name,
-        file_url: publicUrl,
-        file_size: file.size,
-        mime_type: file.type,
-      });
-
-      const { data: dbData, error: dbError } = await supabase
-        .from("documents")
-        .insert([
-          {
-            client_id: clientId,
-            employee_id: currentUser?.id || null,
-            document_type: selectedType,
-            file_name: file.name,
-            file_url: publicUrl,
-            file_size: file.size,
-            mime_type: file.type,
-          },
-        ])
-        .select();
-
-      if (dbError) {
-        console.error("❌ Erro ao salvar documento no BD:", dbError);
+      const driveResult = await response.json();
+      if (!driveResult.success) {
         throw new Error(
-          dbError.message || "Erro ao salvar documento no banco de dados",
+          driveResult.error || "Falha no upload para o Google Drive",
         );
       }
 
-      console.log("✅ Documento salvo com sucesso no BD:", dbData);
+      const driveUrl = driveResult.fileUrl || driveResult.fileId || "";
 
-      // ✅ Sucesso: Arquivo foi enviado e salvo!
+      // 2. Salvar metadados no banco (file_url aponta para o Drive)
+      const { error: dbError } = await supabase.from("documents").insert([
+        {
+          client_id: clientId,
+          employee_id: currentUser?.id || null,
+          document_type: selectedType,
+          file_name: file.name,
+          file_url: driveUrl,
+          file_size: file.size,
+          mime_type: file.type,
+        },
+      ]);
+
+      if (dbError)
+        throw new Error(dbError.message || "Erro ao salvar registro no banco");
+
       alert(
-        "✅ Documento enviado e salvo com sucesso!\n\nArquivo: Storage/documents\nRegistro: Banco de Dados",
+        `✅ Documento enviado ao Google Drive com sucesso!\n\nArquivo: ${file.name}\nTipo: ${selectedType}`,
       );
 
       // Reset UI
       if (fileInputRef.current) fileInputRef.current.value = "";
       setSelectedType(clientType === "empresa" ? "CNPJ" : "RG");
 
-      // Recarregar lista de documentos
       await fetchDocuments();
-
-      // Chamar callback após tudo estar concluído
       if (onUploadSuccess) onUploadSuccess();
     } catch (error) {
       console.error("❌ Erro ao fazer upload:", error);
