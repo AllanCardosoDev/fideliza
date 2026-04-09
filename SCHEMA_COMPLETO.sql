@@ -55,7 +55,8 @@ CREATE TABLE IF NOT EXISTS clients (
   complement       TEXT DEFAULT '',
   neighborhood     TEXT DEFAULT '',
   city             TEXT DEFAULT '',
-  state            TEXT DEFAULT ''
+  state            TEXT DEFAULT '',
+  profile          JSONB DEFAULT '{}'
 );
 
 -- ============================================================
@@ -173,6 +174,11 @@ CREATE TABLE IF NOT EXISTS documents (
 );
 
 -- ============================================================
+-- MIGRAÇÃO: Adicionar campo profile se não existir
+-- ============================================================
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS profile JSONB DEFAULT '{}';
+
+-- ============================================================
 -- 12. ÍNDICES  (performance)
 -- ============================================================
 
@@ -182,6 +188,7 @@ CREATE INDEX IF NOT EXISTS idx_clients_status           ON clients(status);
 CREATE INDEX IF NOT EXISTS idx_clients_created_by       ON clients(created_by);
 CREATE INDEX IF NOT EXISTS idx_clients_owner_id         ON clients(owner_id);
 CREATE INDEX IF NOT EXISTS idx_clients_approval_status  ON clients(approval_status);
+CREATE INDEX IF NOT EXISTS idx_clients_profile          ON clients USING GIN(profile);
 
 -- employees
 CREATE INDEX IF NOT EXISTS idx_employees_email          ON employees(email);
