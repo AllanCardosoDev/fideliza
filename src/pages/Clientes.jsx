@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../App";
+import DocumentUploadGoogle from "../components/DocumentUploadGoogle";
 import {
   maskCpfCnpj,
   maskPhone,
@@ -101,6 +102,7 @@ function ClientForm({
   });
   const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState(0);
+  const [uploadedDocuments, setUploadedDocuments] = useState([]);
   const [loading, setLoading] = useState(null);
 
   const set = (field, value) => {
@@ -278,6 +280,13 @@ function ClientForm({
         >
           <span>3. Dados Adicionais</span>
           {tab3Valid && <span className="tab-check">✓</span>}
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === 3 ? "active" : ""}`}
+          onClick={() => setActiveTab(3)}
+        >
+          <span>4. Documentos</span>
         </button>
       </div>
 
@@ -667,6 +676,125 @@ function ClientForm({
                 Ao atribuir a um funcionário, ele terá acesso total ao cliente e
                 a capacidade de criar empréstimos em seu nome.
               </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 4: Documentos */}
+      {activeTab === 3 && (
+        <div className="tab-content">
+          <div
+            style={{
+              marginBottom: 24,
+              padding: 16,
+              backgroundColor: "var(--bg-secondary)",
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+            }}
+          >
+            <h4 style={{ marginBottom: 12, marginTop: 0 }}>
+              📤 Enviar Documentos
+            </h4>
+            <p
+              style={{
+                fontSize: "0.9rem",
+                color: "var(--text-dim)",
+                marginBottom: 16,
+              }}
+            >
+              Envie os documentos do cliente para Google Drive. Os arquivos
+              serão organizados em uma pasta com o nome do cliente.
+            </p>
+
+            {form.name ? (
+              <DocumentUploadGoogle
+                clientId={null}
+                clientName={form.name}
+                onUploadSuccess={(uploadInfo) => {
+                  setUploadedDocuments((prev) => [...prev, uploadInfo]);
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  padding: 16,
+                  textAlign: "center",
+                  color: "var(--text-dim)",
+                  backgroundColor: "var(--bg-primary)",
+                  borderRadius: 4,
+                }}
+              >
+                ⚠️ Digite o nome do cliente na aba "Dados Pessoais" para enviar
+                documentos.
+              </div>
+            )}
+          </div>
+
+          {uploadedDocuments.length > 0 && (
+            <div>
+              <h4 style={{ marginBottom: 12 }}>📑 Documentos Carregados</h4>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                  gap: 12,
+                }}
+              >
+                {uploadedDocuments.map((doc, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      padding: 12,
+                      backgroundColor: "var(--bg-secondary)",
+                      borderRadius: 8,
+                      border: "1px solid var(--border)",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div style={{ fontSize: "2rem", marginBottom: 8 }}>
+                      {doc.fileName?.endsWith(".pdf") ? "📄" : "🖼️"}
+                    </div>
+                    <p
+                      style={{
+                        marginBottom: 4,
+                        fontSize: "0.85rem",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {doc.fileName}
+                    </p>
+                    <p
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "var(--text-dim)",
+                        marginBottom: 8,
+                      }}
+                    >
+                      {(doc.fileSize / 1024).toFixed(1)} KB
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setUploadedDocuments((prev) =>
+                          prev.filter((_, i) => i !== idx),
+                        )
+                      }
+                      style={{
+                        padding: "4px 8px",
+                        fontSize: "0.75rem",
+                        backgroundColor: "var(--danger)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 4,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

@@ -80,9 +80,14 @@ export default function DocumentUploadGoogle({
       const fileInput = document.getElementById("file-input");
       if (fileInput) fileInput.value = "";
 
-      // Callback para atualizar lista de documentos
+      // Callback para atualizar lista de documentos com detalhes
       if (onUploadSuccess) {
-        setTimeout(() => onUploadSuccess(), 1500);
+        setTimeout(() => onUploadSuccess({
+          fileName: result.fileName || selectedFile.name,
+          fileSize: result.fileSize || selectedFile.size,
+          fileUrl: result.fileUrl,
+          uploadedAt: result.uploadedAt,
+        }), 1500);
       }
     } catch (error) {
       console.error("Erro ao fazer upload:", error);
