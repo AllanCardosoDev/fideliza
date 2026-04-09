@@ -1,8 +1,30 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const GOOGLE_DRIVE_FOLDER_ID = import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID;
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const SCOPES = "https://www.googleapis.com/auth/drive.file";
+
+// Função auxiliar para esperar o carregamento da API do Google
+const waitForGapiLoad = () => {
+  return new Promise((resolve) => {
+    if (window.gapi) {
+      resolve(window.gapi);
+    } else {
+      const checkInterval = setInterval(() => {
+        if (window.gapi) {
+          clearInterval(checkInterval);
+          resolve(window.gapi);
+        }
+      }, 100);
+
+      // Timeout de 10 segundos
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        resolve(null);
+      }, 10000);
+    }
+  });
+};
 
 export function useGoogleDriveOAuth() {
   const [user, setUser] = useState(null);
@@ -14,55 +36,68 @@ export function useGoogleDriveOAuth() {
   useEffect(() => {
     const initGoogleAPI = async () => {
       try {
-        // Carregar gapi
-        if (window.gapi) {
-          window.gapi.load('client:auth2', async () => {
-            try {
-              await window.gapi.client.init({
-                clientId: GOOGLE_CLIENT_ID,
-                scope: SCOPES,
-              });
+        // Esperar o gapi estar disponível
+        const gapi = await waitForGapiLoad();
 
-              const auth2 = window.gapi.auth2.getAuthInstance();
-              
-              // Verificar se já está logado
-              if (auth2.isSignedIn.get()) {
-                const googleUser = auth2.currentUser.get();
-                setUser(googleUser);
-                setIsSignedIn(true);
-                saveTokenToLocalStorage(googleUser);
-              } else {
-                // Tentar restaurar token do localStorage
-                const savedToken = localStorage.getItem('google_oauth_token');
-                if (savedToken) {
-                  try {
-                    // Tentar autorizar com token salvo
-                    await auth2.signIn();
-                    const googleUser = auth2.currentUser.get();
-                    setUser(googleUser);
-                    setIsSignedIn(true);
-                  } catch (err) {
-                    console.log('Token expirado ou inválido');
-                    localStorage.removeItem('google_oauth_token');
-                  }
+        if (!gapi) {
+          setError("Falha ao carregar Google API. Verifique sua conexão.");
+          setIsLoading(false);
+          return;
+        }
+
+        if (!GOOGLE_CLIENT_ID) {
+          setError(
+            "Google Client ID não configurado. Verifique seu .env.local",
+          );
+          setIsLoading(false);
+          return;
+        }
+
+        gapi.load("client:auth2", async () => {
+          try {
+            await gapi.client.init({
+              clientId: GOOGLE_CLIENT_ID,
+              scope: SCOPES,
+            });
+
+            const auth2 = gapi.auth2.getAuthInstance();
+
+            // Verificar se já está logado
+            if (auth2.isSignedIn.get()) {
+              const googleUser = auth2.currentUser.get();
+              setUser(googleUser);
+              setIsSignedIn(true);
+              saveTokenToLocalStorage(googleUser);
+            } else {
+              // Tentar restaurar token do localStorage
+              const savedToken = localStorage.getItem("google_oauth_token");
+              if (savedToken) {
+                try {
+                  // Tentar autorizar com token salvo
+                  await auth2.signIn();
+                  const googleUser = auth2.currentUser.get();
+                  setUser(googleUser);
+                  setIsSignedIn(true);
+                } catch (err) {
+                  console.log("Token expirado ou inválido");
+                  localStorage.removeItem("google_oauth_token");
                 }
               }
-
-              // Listener para mudanças de autenticação
-              auth2.isSignedIn.listen(handleSignInStatusChange);
-              
-              setIsLoading(false);
-            } catch (err) {
-              setError('Erro ao inicializar Google API: ' + err.message);
-              setIsLoading(false);
             }
-          });
-        } else {
-          setError('Google API não carregada');
-          setIsLoading(false);
-        }
+
+            // Listener para mudanças de autenticação
+            auth2.isSignedIn.listen(handleSignInStatusChange);
+
+            setIsLoading(false);
+          } catch (err) {
+            setError("Erro ao inicializar Google API: " + err.message);
+            console.error("Google API init error:", err);
+            setIsLoading(false);
+          }
+        });
       } catch (err) {
-        setError('Erro ao carregar Google API: ' + err.message);
+        setError("Erro ao carregar Google API: " + err.message);
+        console.error("Google API load error:", err);
         setIsLoading(false);
       }
     };
@@ -70,8 +105,10 @@ export function useGoogleDriveOAuth() {
     initGoogleAPI();
   }, []);
 
-  const handleSignInStatusChange = (isSignedIn) => {
-    if (isSignedIn) {
+  const handleSignInStatusChange = useCallback((isSignedInStatus) => {
+    if (!window.gapi) return;
+
+    if (isSignedInStatus) {
       const auth2 = window.gapi.auth2.getAuthInstance();
       const googleUser = auth2.currentUser.get();
       setUser(googleUser);
@@ -80,21 +117,27 @@ export function useGoogleDriveOAuth() {
     } else {
       setUser(null);
       setIsSignedIn(false);
-      localStorage.removeItem('google_oauth_token');
+      localStorage.removeItem("google_oauth_token");
     }
-  };
+  }, []);
 
   const saveTokenToLocalStorage = (googleUser) => {
     const authResponse = googleUser.getAuthResponse();
     if (authResponse) {
-      localStorage.setItem('google_oauth_token', authResponse.id_token);
-      localStorage.setItem('google_oauth_expires_in', authResponse.expires_in);
-      localStorage.setItem('google_oauth_timestamp', new Date().getTime().toString());
+      localStorage.setItem("google_oauth_token", authResponse.id_token);
+      localStorage.setItem("google_oauth_expires_in", authResponse.expires_in);
+      localStorage.setItem(
+        "google_oauth_timestamp",
+        new Date().getTime().toString(),
+      );
     }
   };
 
   const signIn = useCallback(async () => {
     try {
+      if (!window.gapi) {
+        throw new Error("Google API não está carregada");
+      }
       setError(null);
       const auth2 = window.gapi.auth2.getAuthInstance();
       const googleUser = await auth2.signIn();
@@ -111,12 +154,15 @@ export function useGoogleDriveOAuth() {
 
   const signOut = useCallback(async () => {
     try {
+      if (!window.gapi) {
+        throw new Error("Google API não está carregada");
+      }
       setError(null);
       const auth2 = window.gapi.auth2.getAuthInstance();
       await auth2.signOut();
       setUser(null);
       setIsSignedIn(false);
-      localStorage.removeItem('google_oauth_token');
+      localStorage.removeItem("google_oauth_token");
     } catch (err) {
       const errorMsg = `Erro ao fazer logout: ${err.message}`;
       setError(errorMsg);
@@ -127,7 +173,11 @@ export function useGoogleDriveOAuth() {
   const uploadFile = useCallback(
     async (file, clientName, documentType) => {
       if (!isSignedIn) {
-        throw new Error('Você não está logado no Google. Faça login primeiro.');
+        throw new Error("Você não está logado no Google. Faça login primeiro.");
+      }
+
+      if (!window.gapi) {
+        throw new Error("Google API não está carregada");
       }
 
       try {
@@ -150,7 +200,7 @@ export function useGoogleDriveOAuth() {
         const response = await window.gapi.client.drive.files.create({
           resource: fileMetadata,
           media: media,
-          fields: 'id, name, mimeType, createdTime, size, webViewLink',
+          fields: "id, name, mimeType, createdTime, size, webViewLink",
         });
 
         if (response.result) {
@@ -163,7 +213,7 @@ export function useGoogleDriveOAuth() {
             uploadedAt: response.result.createdTime,
           };
         } else {
-          throw new Error('Erro ao fazer upload do arquivo');
+          throw new Error("Erro ao fazer upload do arquivo");
         }
       } catch (err) {
         const errorMsg = `Erro ao fazer upload: ${err.message}`;
@@ -171,18 +221,22 @@ export function useGoogleDriveOAuth() {
         throw err;
       }
     },
-    [isSignedIn]
+    [isSignedIn, getOrCreateClientFolder],
   );
 
   const getOrCreateClientFolder = useCallback(async (clientName) => {
     try {
+      if (!window.gapi) {
+        throw new Error("Google API não está carregada");
+      }
+
       // Procurar pasta do cliente na pasta raiz (GOOGLE_DRIVE_FOLDER_ID)
       const query = `'${GOOGLE_DRIVE_FOLDER_ID}' in parents and name='${clientName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
 
       const response = await window.gapi.client.drive.files.list({
         q: query,
-        spaces: 'drive',
-        fields: 'files(id, name)',
+        spaces: "drive",
+        fields: "files(id, name)",
         pageSize: 1,
       });
 
@@ -193,18 +247,18 @@ export function useGoogleDriveOAuth() {
       // Se não existir, criar pasta
       const folderMetadata = {
         name: clientName,
-        mimeType: 'application/vnd.google-apps.folder',
+        mimeType: "application/vnd.google-apps.folder",
         parents: [GOOGLE_DRIVE_FOLDER_ID],
       };
 
       const createResponse = await window.gapi.client.drive.files.create({
         resource: folderMetadata,
-        fields: 'id, name',
+        fields: "id, name",
       });
 
       return createResponse.result;
     } catch (err) {
-      console.error('Erro ao criar/encontrar pasta do cliente:', err);
+      console.error("Erro ao criar/encontrar pasta do cliente:", err);
       throw err;
     }
   }, []);
@@ -212,7 +266,11 @@ export function useGoogleDriveOAuth() {
   const listClientDocuments = useCallback(
     async (clientName) => {
       if (!isSignedIn) {
-        throw new Error('Você não está logado no Google.');
+        throw new Error("Você não está logado no Google.");
+      }
+
+      if (!window.gapi) {
+        throw new Error("Google API não está carregada");
       }
 
       try {
@@ -221,36 +279,43 @@ export function useGoogleDriveOAuth() {
 
         const response = await window.gapi.client.drive.files.list({
           q: query,
-          spaces: 'drive',
-          fields: 'files(id, name, mimeType, createdTime, size, webViewLink)',
+          spaces: "drive",
+          fields: "files(id, name, mimeType, createdTime, size, webViewLink)",
           pageSize: 100,
         });
 
         return response.result.files || [];
       } catch (err) {
-        console.error('Erro ao listar documentos:', err);
+        console.error("Erro ao listar documentos:", err);
         throw err;
       }
     },
-    [isSignedIn, getOrCreateClientFolder]
+    [isSignedIn, getOrCreateClientFolder],
   );
 
-  const deleteFile = useCallback(async (fileId) => {
-    if (!isSignedIn) {
-      throw new Error('Você não está logado no Google.');
-    }
+  const deleteFile = useCallback(
+    async (fileId) => {
+      if (!isSignedIn) {
+        throw new Error("Você não está logado no Google.");
+      }
 
-    try {
-      await window.gapi.client.drive.files.delete({
-        fileId: fileId,
-      });
-      return { success: true };
-    } catch (err) {
-      const errorMsg = `Erro ao deletar arquivo: ${err.message}`;
-      setError(errorMsg);
-      throw err;
-    }
-  }, [isSignedIn]);
+      if (!window.gapi) {
+        throw new Error("Google API não está carregada");
+      }
+
+      try {
+        await window.gapi.client.drive.files.delete({
+          fileId: fileId,
+        });
+        return { success: true };
+      } catch (err) {
+        const errorMsg = `Erro ao deletar arquivo: ${err.message}`;
+        setError(errorMsg);
+        throw err;
+      }
+    },
+    [isSignedIn],
+  );
 
   return {
     user,

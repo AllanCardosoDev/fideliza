@@ -20,27 +20,26 @@ export default function Documentos() {
 
   // Carregar documentos quando signIn mudar ou clientId mudar
   useEffect(() => {
-    if (!clientId || !isSignedIn) {
-      setLoading(false);
-      return;
-    }
+    const loadDocuments = async () => {
+      if (!clientId || !isSignedIn || !client) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const docs = await listClientDocuments(client.name);
+        setDocuments(docs || []);
+      } catch (error) {
+        console.error("Erro ao carregar documentos:", error);
+        setDocuments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadDocuments();
-  }, [clientId, isSignedIn]);
-
-  const loadDocuments = async () => {
-    if (!client) return;
-
-    try {
-      setLoading(true);
-      const docs = await listClientDocuments(client.name);
-      setDocuments(docs || []);
-    } catch (error) {
-      console.error("Erro ao carregar documentos:", error);
-      setDocuments([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [clientId, isSignedIn, client, listClientDocuments]);
 
   const handleDocumentDeleted = async (documentId) => {
     if (!window.confirm("Tem certeza que deseja deletar este documento?")) {
@@ -59,9 +58,16 @@ export default function Documentos() {
     }
   };
 
-  const handleUploadSuccess = () => {
+  const handleUploadSuccess = async () => {
     // Recarregar documentos após upload
-    loadDocuments();
+    if (!client || !isSignedIn) return;
+
+    try {
+      const docs = await listClientDocuments(client.name);
+      setDocuments(docs || []);
+    } catch (error) {
+      console.error("Erro ao recarregar documentos:", error);
+    }
   };
 
   if (!client) {
