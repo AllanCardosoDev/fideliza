@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { fmt, fmtDate, calcPMT, getClientName } from "../utils/helpers";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { supabase } from "../services/supabaseClient";
 
 import { calculateGlobalKPIs } from "../utils/finance";
 
@@ -635,6 +636,13 @@ function Dashboard() {
     );
   };
 
+  // Diagnóstico: verificar status da conexão e dados
+  const isDiagnosticMode =
+    window.location.hostname === "localhost" ||
+    window.location.hostname.includes("hostinger");
+  const hasData =
+    clients.length > 0 || loans.length > 0 || transactions.length > 0;
+
   return (
     <div className="page active">
       <div className="page-header">
@@ -662,6 +670,75 @@ function Dashboard() {
           </button>
         </div>
       </div>
+
+      {/* DIAGNÓSTICO - Mostrar apenas em dev ou se não há dados */}
+      {(isDiagnosticMode || !hasData) && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: 16,
+            borderRadius: "8px",
+            border: `2px solid ${
+              supabase ? (hasData ? "#16a34a" : "#f97316") : "#ef4444"
+            }`,
+            backgroundColor:
+              supabase && hasData
+                ? "rgba(22, 163, 74, 0.1)"
+                : supabase && !hasData
+                  ? "rgba(249, 115, 22, 0.1)"
+                  : "rgba(239, 68, 68, 0.1)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div
+              style={{
+                fontSize: "1.5rem",
+                minWidth: 40,
+                textAlign: "center",
+              }}
+            >
+              {supabase
+                ? hasData
+                  ? "✅"
+                  : "⚠️"
+                : "❌"}
+            </div>
+            <div style={{ flex: 1 }}>
+              <strong style={{ fontSize: "0.95rem", display: "block" }}>
+                {supabase
+                  ? hasData
+                    ? "Conexão OK - Dados carregados"
+                    : "Aviso: Sem dados no banco"
+                  : "⚠️ ERRO: Supabase não conectado"}
+              </strong>
+              <div style={{ fontSize: "0.85rem", color: "#666", marginTop: 4 }}>
+                {supabase ? (
+                  <>
+                    Clientes: {clients.length} | Empréstimos: {loans.length} |
+                    Transações: {transactions.length}
+                    {!hasData && (
+                      <>
+                        <br />
+                        💡 Dica: Verifique se as variáveis de ambiente
+                        VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão
+                        configuradas na Hostinger.
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    As variáveis de ambiente (VITE_SUPABASE_URL e
+                    VITE_SUPABASE_ANON_KEY) não estão definidas.
+                    <br />
+                    💡 Ação: Configure-as no painel da Hostinger Node.js e
+                    redeploy.
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CASH FLOW CHART - 3 Months */}
       {/* Moved to end - after KPI cards */}
