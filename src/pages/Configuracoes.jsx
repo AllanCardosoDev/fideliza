@@ -337,7 +337,7 @@ function Configuracoes() {
                     onChange={(e) =>
                       setPwForm({ ...pwForm, email: e.target.value })
                     }
-                    placeholder=\"financeiro@fidelizacred.com\"
+                    placeholder="financeiro@fidelizacred.com"
                     autoComplete="username"
                   />
                 </div>
