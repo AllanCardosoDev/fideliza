@@ -484,14 +484,6 @@ export default function DocumentosGerenciador() {
     </div>
   );
 }
-          <div
-            style={{
-              padding: 24,
-              backgroundColor: "var(--bg-secondary)",
-              borderRadius: 8,
-              border: "1px solid var(--border)",
-            }}
-          >
             <h2 style={{ marginTop: 0, marginBottom: 20, fontSize: "1.3rem" }}>
               📤 Enviar Documento
             </h2>
