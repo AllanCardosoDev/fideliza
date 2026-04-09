@@ -779,7 +779,7 @@ function Dashboard() {
               </span>
               <span
                 className="kpi-value"
-                style={{ color: "#111", fontSize: "1.6rem" }}
+                style={{ color: "#fff", fontSize: "1.6rem" }}
               >
                 {fmt(kpis.caixaDisponivel)}
               </span>
@@ -826,7 +826,7 @@ function Dashboard() {
             </span>
             <span
               className="kpi-value"
-              style={{ color: "#111", fontSize: "1.6rem" }}
+              style={{ color: "#fff", fontSize: "1.6rem" }}
             >
               {kpis.activeLoansCount}
             </span>
@@ -869,7 +869,7 @@ function Dashboard() {
             </span>
             <span
               className="kpi-value"
-              style={{ color: "#111", fontSize: "1.6rem" }}
+              style={{ color: "#fff", fontSize: "1.6rem" }}
             >
               {fmt(kpis.totalEmprestado)}
             </span>
@@ -911,7 +911,7 @@ function Dashboard() {
             </span>
             <span
               className="kpi-value"
-              style={{ color: "#111", fontSize: "1.6rem" }}
+              style={{ color: "#fff", fontSize: "1.6rem" }}
             >
               {fmt(kpis.totalAReceber)}
             </span>
@@ -954,7 +954,7 @@ function Dashboard() {
             </span>
             <span
               className="kpi-value"
-              style={{ color: "#111", fontSize: "1.6rem" }}
+              style={{ color: "#fff", fontSize: "1.6rem" }}
             >
               {fmt(kpis.totalRecebido)}
             </span>
@@ -998,7 +998,7 @@ function Dashboard() {
             </span>
             <span
               className="kpi-value"
-              style={{ color: "#111", fontSize: "1.6rem" }}
+              style={{ color: "#fff", fontSize: "1.6rem" }}
             >
               {fmt(kpis.totalEmAtraso)}
             </span>
