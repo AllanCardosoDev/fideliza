@@ -927,20 +927,6 @@ function Simulador() {
                     : fmt(selectedCalculation.installmentValue)}
                 </div>
               </div>
-
-              <div className="sim-result-card">
-                <div className="sim-result-label">Custo do Crédito (Juros)</div>
-                <div className="sim-result-value red">
-                  {fmt(selectedCalculation.totalInterest)}
-                </div>
-              </div>
-
-              <div className="sim-result-card">
-                <div className="sim-result-label">Valor Total Final</div>
-                <div className="sim-result-value green">
-                  {fmt(selectedCalculation.totalToReceive)}
-                </div>
-              </div>
             </div>
 
             <div className="sim-info-box">
