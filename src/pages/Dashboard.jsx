@@ -773,19 +773,29 @@ function Dashboard() {
             <div className="kpi-info">
               <span
                 className="kpi-label"
-                style={{ fontSize: "0.75rem", fontWeight: 600, color: "#888" }}
+                style={{
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  color: "#666",
+                  lineHeight: "1.2",
+                }}
               >
                 Caixa Disponível
               </span>
               <span
                 className="kpi-value"
-                style={{ color: "#fff", fontSize: "1.6rem" }}
+                style={{
+                  color: "#1f2937",
+                  fontSize: "2rem",
+                  fontWeight: 700,
+                  letterSpacing: "-0.5px",
+                }}
               >
                 {fmt(kpis.caixaDisponivel)}
               </span>
               <span
                 className="kpi-change positive"
-                style={{ fontSize: "0.8rem", color: "#888" }}
+                style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}
               >
                 Saldo operacional
               </span>
@@ -820,19 +830,29 @@ function Dashboard() {
           <div className="kpi-info">
             <span
               className="kpi-label"
-              style={{ fontSize: "0.75rem", fontWeight: 600, color: "#888" }}
+              style={{
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                color: "#666",
+                lineHeight: "1.2",
+              }}
             >
               Contratos Ativos
             </span>
             <span
               className="kpi-value"
-              style={{ color: "#fff", fontSize: "1.6rem" }}
+              style={{
+                color: "#1f2937",
+                fontSize: "2rem",
+                fontWeight: 700,
+                letterSpacing: "-0.5px",
+              }}
             >
               {kpis.activeLoansCount}
             </span>
             <span
               className="kpi-change positive"
-              style={{ fontSize: "0.8rem", color: "#888" }}
+              style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}
             >
               Em andamento
             </span>
@@ -863,19 +883,29 @@ function Dashboard() {
           <div className="kpi-info">
             <span
               className="kpi-label"
-              style={{ fontSize: "0.75rem", fontWeight: 600, color: "#888" }}
+              style={{
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                color: "#666",
+                lineHeight: "1.2",
+              }}
             >
               Total Emprestado
             </span>
             <span
               className="kpi-value"
-              style={{ color: "#fff", fontSize: "1.6rem" }}
+              style={{
+                color: "#1f2937",
+                fontSize: "2rem",
+                fontWeight: 700,
+                letterSpacing: "-0.5px",
+              }}
             >
               {fmt(kpis.totalEmprestado)}
             </span>
             <span
               className="kpi-change positive"
-              style={{ fontSize: "0.8rem", color: "#888" }}
+              style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}
             >
               Capital liberado
             </span>
@@ -905,19 +935,29 @@ function Dashboard() {
           <div className="kpi-info">
             <span
               className="kpi-label"
-              style={{ fontSize: "0.75rem", fontWeight: 600, color: "#888" }}
+              style={{
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                color: "#666",
+                lineHeight: "1.2",
+              }}
             >
               Total a Receber
             </span>
             <span
               className="kpi-value"
-              style={{ color: "#fff", fontSize: "1.6rem" }}
+              style={{
+                color: "#1f2937",
+                fontSize: "2rem",
+                fontWeight: 700,
+                letterSpacing: "-0.5px",
+              }}
             >
               {fmt(kpis.totalAReceber)}
             </span>
             <span
               className="kpi-change neutral"
-              style={{ fontSize: "0.8rem", color: "#888" }}
+              style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}
             >
               Saldo em aberto
             </span>
@@ -948,19 +988,29 @@ function Dashboard() {
           <div className="kpi-info">
             <span
               className="kpi-label"
-              style={{ fontSize: "0.75rem", fontWeight: 600, color: "#888" }}
+              style={{
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                color: "#666",
+                lineHeight: "1.2",
+              }}
             >
               Total Recebido
             </span>
             <span
               className="kpi-value"
-              style={{ color: "#fff", fontSize: "1.6rem" }}
+              style={{
+                color: "#1f2937",
+                fontSize: "2rem",
+                fontWeight: 700,
+                letterSpacing: "-0.5px",
+              }}
             >
               {fmt(kpis.totalRecebido)}
             </span>
             <span
               className="kpi-change positive"
-              style={{ fontSize: "0.8rem", color: "#888" }}
+              style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}
             >
               Parcelas quitadas
             </span>
@@ -992,19 +1042,29 @@ function Dashboard() {
           <div className="kpi-info">
             <span
               className="kpi-label"
-              style={{ fontSize: "0.75rem", fontWeight: 600, color: "#888" }}
+              style={{
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                color: "#666",
+                lineHeight: "1.2",
+              }}
             >
               Em Atraso
             </span>
             <span
               className="kpi-value"
-              style={{ color: "#fff", fontSize: "1.6rem" }}
+              style={{
+                color: "#1f2937",
+                fontSize: "2rem",
+                fontWeight: 700,
+                letterSpacing: "-0.5px",
+              }}
             >
               {fmt(kpis.totalEmAtraso)}
             </span>
             <span
               className="kpi-change negative"
-              style={{ fontSize: "0.8rem", color: "#888" }}
+              style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}
             >
               {kpis.overdueCount} empréstimo{kpis.overdueCount !== 1 ? "s" : ""}
             </span>
