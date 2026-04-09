@@ -242,19 +242,6 @@ function LoanForm({
             <span>Valor da Parcela:</span>
             <strong>{fmt(pmt)}</strong>
           </div>
-          <div className="loan-summary-item">
-            <span>Total a Pagar:</span>
-            <strong>{fmt(totalAmount)}</strong>
-          </div>
-          <div className="loan-summary-item">
-            <span>Total de Juros:</span>
-            <strong className="text-warning">
-              {fmt(
-                totalAmount -
-                  (parseFloat(String(form.value).replace(",", ".")) || 0),
-              )}
-            </strong>
-          </div>
         </div>
       )}
 

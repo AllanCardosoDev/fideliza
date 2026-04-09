@@ -172,14 +172,6 @@ export default function LandingSimulador() {
                     {(taxa * 100).toFixed(2).replace(".", ",")}% a.m.
                   </span>
                 </div>
-                <div className="lp-sim-detail-row">
-                  <span>Total a Pagar:</span>
-                  <span className="lp-sim-detail-val">{fmt(totalPago)}</span>
-                </div>
-                <div className="lp-sim-detail-row">
-                  <span>Total de Juros:</span>
-                  <span className="lp-sim-detail-val">{fmt(totalJuros)}</span>
-                </div>
               </div>
 
               <button className="lp-sim-btn" onClick={handleWhatsApp}>
