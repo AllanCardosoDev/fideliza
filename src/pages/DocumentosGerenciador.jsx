@@ -861,23 +861,6 @@ export default function DocumentosGerenciador() {
           </p>
         </div>
       )}
-
-      {isSignedIn && (
-        <div
-          style={{
-            padding: 16,
-            backgroundColor: "var(--bg-secondary)",
-            borderRadius: 8,
-            border: "1px solid var(--border)",
-            textAlign: "center",
-            color: "var(--text-dim)",
-            fontSize: "0.9rem",
-          }}
-        >
-          ✅ Conectado ao Google Drive | 📁 Pasta: /Documentos Clientes/
-          {clientName || "..."}
-        </div>
-      )}
     </div>
   );
 }
