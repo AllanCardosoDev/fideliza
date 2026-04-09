@@ -452,8 +452,11 @@ function Funcionarios() {
     (sum, e) => sum + Number(e.salary || 0),
     0,
   );
+  // Arredondar a média para 2 casas decimais
   const averageSalary =
-    employees.length > 0 ? totalPayroll / employees.length : 0;
+    employees.length > 0
+      ? Math.round((totalPayroll / employees.length) * 100) / 100
+      : 0;
 
   const statusLabel = (s) => STATUS_OPTS.find((o) => o.value === s)?.label || s;
   const statusCls = (s) => STATUS_OPTS.find((o) => o.value === s)?.cls || "";
