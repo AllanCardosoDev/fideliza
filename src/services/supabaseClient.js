@@ -10,7 +10,9 @@ console.log(
 );
 console.log(
   "KEY carregada:",
-  supabaseAnonKey ? `"${supabaseAnonKey.slice(0, 20)}..."` : "❌ UNDEFINED/VAZIA",
+  supabaseAnonKey
+    ? `"${supabaseAnonKey.slice(0, 20)}..."`
+    : "❌ UNDEFINED/VAZIA",
 );
 console.log("import.meta.env:", import.meta.env);
 

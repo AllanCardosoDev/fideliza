@@ -697,11 +697,7 @@ function Dashboard() {
                 textAlign: "center",
               }}
             >
-              {supabase
-                ? hasData
-                  ? "✅"
-                  : "⚠️"
-                : "❌"}
+              {supabase ? (hasData ? "✅" : "⚠️") : "❌"}
             </div>
             <div style={{ flex: 1 }}>
               <strong style={{ fontSize: "0.95rem", display: "block" }}>
