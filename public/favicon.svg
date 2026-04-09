@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="30" fill="#fff" stroke="#d4af37" stroke-width="4" />
+    <text x="16" y="42" font-family="DM Sans, Arial, sans-serif" font-size="28" font-weight="bold"
+        fill="#1e3a8a">F</text>
+    <text x="34" y="42" font-family="DM Sans, Arial, sans-serif" font-size="28" font-weight="bold"
+        fill="#d4af37">C</text>
+</svg>
