@@ -135,9 +135,7 @@ export default function DocumentUploadGoogle({
 
         {/* Erro ao inicializar */}
         {authError && !isSignedIn && !isLoading && (
-          <div className="message message-error">
-            ❌ {authError}
-          </div>
+          <div className="message message-error">❌ {authError}</div>
         )}
 
         {!isLoading && !isSignedIn && !authError && (

@@ -156,7 +156,8 @@ export default function DocumentUploadTab({ clientName, onUploadSuccess }) {
         }}
       >
         <p style={{ margin: 0, fontSize: "0.95rem", color: "#333" }}>
-          <strong>📁 {clientName}</strong> - Envie os documentos para Google Drive
+          <strong>📁 {clientName}</strong> - Envie os documentos para Google
+          Drive
         </p>
       </div>
 
@@ -237,7 +238,9 @@ export default function DocumentUploadTab({ clientName, onUploadSuccess }) {
               padding: 48,
               border: `2px dashed ${dragActive ? "var(--primary)" : "var(--border)"}`,
               borderRadius: 8,
-              backgroundColor: dragActive ? "rgba(var(--primary-rgb), 0.05)" : "var(--bg-secondary)",
+              backgroundColor: dragActive
+                ? "rgba(var(--primary-rgb), 0.05)"
+                : "var(--bg-secondary)",
               textAlign: "center",
               cursor: "pointer",
               transition: "all 0.3s",
@@ -268,7 +271,13 @@ export default function DocumentUploadTab({ clientName, onUploadSuccess }) {
                   ? "Solte o arquivo aqui"
                   : "Arraste um arquivo ou clique para selecionar"}
               </h3>
-              <p style={{ color: "var(--text-dim)", margin: "8px 0 0 0", fontSize: "0.9rem" }}>
+              <p
+                style={{
+                  color: "var(--text-dim)",
+                  margin: "8px 0 0 0",
+                  fontSize: "0.9rem",
+                }}
+              >
                 PDF, Imagem, Word (máx 10MB)
               </p>
             </label>
@@ -300,18 +309,18 @@ export default function DocumentUploadTab({ clientName, onUploadSuccess }) {
                   messageType === "success"
                     ? "#ecfdf5"
                     : messageType === "error"
-                    ? "#fef2f2"
-                    : messageType === "warning"
-                    ? "#fffbeb"
-                    : "#eff6ff",
+                      ? "#fef2f2"
+                      : messageType === "warning"
+                        ? "#fffbeb"
+                        : "#eff6ff",
                 borderLeft: `4px solid ${
                   messageType === "success"
                     ? "#10b981"
                     : messageType === "error"
-                    ? "#ef4444"
-                    : messageType === "warning"
-                    ? "#f59e0b"
-                    : "#3b82f6"
+                      ? "#ef4444"
+                      : messageType === "warning"
+                        ? "#f59e0b"
+                        : "#3b82f6"
                 }`,
                 borderRadius: 4,
               }}
@@ -324,10 +333,10 @@ export default function DocumentUploadTab({ clientName, onUploadSuccess }) {
                     messageType === "success"
                       ? "#047857"
                       : messageType === "error"
-                      ? "#7f1d1d"
-                      : messageType === "warning"
-                      ? "#92400e"
-                      : "#1e40af",
+                        ? "#7f1d1d"
+                        : messageType === "warning"
+                          ? "#92400e"
+                          : "#1e40af",
                 }}
               >
                 {message}
