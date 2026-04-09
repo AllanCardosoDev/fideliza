@@ -17,6 +17,7 @@ import LandingSobre from "./pages/LandingSobre";
 import LandingServicos from "./pages/LandingServicos";
 import LandingSimulador from "./pages/LandingSimulador";
 import Clientes from "./pages/Clientes";
+import Documentos from "./pages/Documentos";
 import Financeiro from "./pages/Financeiro";
 import Emprestimos from "./pages/Emprestimos";
 import Funcionarios from "./pages/Funcionarios";
@@ -1074,6 +1075,7 @@ export default function App() {
             <Route element={<ProtectedLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/clientes" element={<Clientes />} />
+              <Route path="/documentos/:clientId" element={<Documentos />} />
               <Route path="/financeiro" element={<Financeiro />} />
               <Route path="/emprestimos" element={<Emprestimos />} />
               <Route path="/simulador" element={<Simulador />} />

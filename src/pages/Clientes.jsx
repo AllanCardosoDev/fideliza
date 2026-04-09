@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useEffect,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppContext } from "../App";
 import {
   maskCpfCnpj,
@@ -709,6 +710,7 @@ function ClientForm({
 }
 
 function Clientes() {
+  const navigate = useNavigate();
   const {
     clients,
     loans,
@@ -1465,6 +1467,13 @@ function Clientes() {
                       </td>
                       <td>{fmt(clientBalance(c.id))}</td>
                       <td>
+                        <button
+                          className="btn-icon"
+                          title="Documentos"
+                          onClick={() => navigate(`/documentos/${c.id}`)}
+                        >
+                          📄
+                        </button>
                         <button
                           className="btn-icon"
                           title="Ver empréstimos"
