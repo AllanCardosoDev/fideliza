@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../App";
-import DocumentUploadGoogle from "../components/DocumentUploadGoogle";
+import DocumentUploadTab from "../components/DocumentUploadTab";
 import {
   maskCpfCnpj,
   maskPhone,
@@ -691,7 +691,8 @@ function ClientForm({
               marginBottom: 16,
             }}
           >
-            📤 Envie os documentos do cliente para Google Drive. Os arquivos serão organizados em uma pasta com o nome do cliente.
+            📤 Envie os documentos do cliente para Google Drive. Os arquivos
+            serão organizados em uma pasta com o nome do cliente.
           </p>
 
           {!form.name ? (
@@ -705,21 +706,13 @@ function ClientForm({
                 border: "1px solid var(--border)",
               }}
             >
-              ⚠️ Digite o nome do cliente na aba "Dados Pessoais" para enviar documentos.
+              ⚠️ Digite o nome do cliente na aba "Dados Pessoais" para enviar
+              documentos.
             </div>
           ) : (
             <>
-              <div
-                style={{
-                  marginBottom: 24,
-                  padding: 16,
-                  backgroundColor: "var(--bg-secondary)",
-                  borderRadius: 8,
-                  border: "1px solid var(--border)",
-                }}
-              >
-                <DocumentUploadGoogle
-                  clientId={null}
+              <div>
+                <DocumentUploadTab
                   clientName={form.name}
                   onUploadSuccess={(uploadInfo) => {
                     setUploadedDocuments((prev) => [...prev, uploadInfo]);
@@ -733,7 +726,8 @@ function ClientForm({
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(200px, 1fr))",
                       gap: 12,
                     }}
                   >
