@@ -709,7 +709,7 @@ function Dashboard() {
                     : "Aviso: Sem dados no banco"
                   : "⚠️ ERRO: Supabase não conectado"}
               </strong>
-              <div style={{ fontSize: "0.85rem", color: "#666", marginTop: 4 }}>
+              <div style={{ fontSize: "0.85rem", color: "var(--text-dim)", marginTop: 4 }}>
                 {supabase ? (
                   <>
                     Clientes: {clients.length} | Empréstimos: {loans.length} |
@@ -749,8 +749,8 @@ function Dashboard() {
             className="kpi-card animate-in"
             style={{
               "--delay": 1,
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              border: "1px solid #e5e7eb",
+              boxShadow: "var(--shadow)",
+              border: "1px solid var(--border)",
             }}
           >
             <div
@@ -776,7 +776,7 @@ function Dashboard() {
                 style={{
                   fontSize: "0.85rem",
                   fontWeight: 600,
-                  color: "#666",
+                  color: "var(--text-dim)",
                   lineHeight: "1.2",
                 }}
               >
@@ -785,7 +785,7 @@ function Dashboard() {
               <span
                 className="kpi-value"
                 style={{
-                  color: "#1f2937",
+                  color: "var(--text)",
                   fontSize: "2rem",
                   fontWeight: 700,
                   letterSpacing: "-0.5px",
@@ -795,7 +795,7 @@ function Dashboard() {
               </span>
               <span
                 className="kpi-change positive"
-                style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}
+                style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: 500 }}
               >
                 Saldo operacional
               </span>
@@ -807,8 +807,8 @@ function Dashboard() {
           className="kpi-card animate-in"
           style={{
             "--delay": 2,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            border: "1px solid #e5e7eb",
+            boxShadow: "var(--shadow)",
+            border: "1px solid var(--border)",
           }}
         >
           <div className="kpi-icon" style={{ background: "var(--orange)" }}>
@@ -833,7 +833,7 @@ function Dashboard() {
               style={{
                 fontSize: "0.85rem",
                 fontWeight: 600,
-                color: "#666",
+                color: "var(--text-dim)",
                 lineHeight: "1.2",
               }}
             >
@@ -842,7 +842,7 @@ function Dashboard() {
             <span
               className="kpi-value"
               style={{
-                color: "#1f2937",
+                color: "var(--text)",
                 fontSize: "2rem",
                 fontWeight: 700,
                 letterSpacing: "-0.5px",
@@ -852,7 +852,7 @@ function Dashboard() {
             </span>
             <span
               className="kpi-change positive"
-              style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}
+              style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: 500 }}
             >
               Em andamento
             </span>
@@ -863,8 +863,8 @@ function Dashboard() {
           className="kpi-card animate-in"
           style={{
             "--delay": 3,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            border: "1px solid #e5e7eb",
+            boxShadow: "var(--shadow)",
+            border: "1px solid var(--border)",
           }}
         >
           <div className="kpi-icon" style={{ background: "var(--green)" }}>
@@ -886,7 +886,7 @@ function Dashboard() {
               style={{
                 fontSize: "0.85rem",
                 fontWeight: 600,
-                color: "#666",
+                color: "var(--text-dim)",
                 lineHeight: "1.2",
               }}
             >
@@ -895,7 +895,7 @@ function Dashboard() {
             <span
               className="kpi-value"
               style={{
-                color: "#1f2937",
+                color: "var(--text)",
                 fontSize: "2rem",
                 fontWeight: 700,
                 letterSpacing: "-0.5px",
@@ -905,7 +905,7 @@ function Dashboard() {
             </span>
             <span
               className="kpi-change positive"
-              style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}
+              style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: 500 }}
             >
               Capital liberado
             </span>
@@ -916,8 +916,8 @@ function Dashboard() {
           className="kpi-card animate-in"
           style={{
             "--delay": 4,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            border: "1px solid #e5e7eb",
+            boxShadow: "var(--shadow)",
+            border: "1px solid var(--border)",
           }}
         >
           <div className="kpi-icon" style={{ background: "var(--purple)" }}>
@@ -938,7 +938,7 @@ function Dashboard() {
               style={{
                 fontSize: "0.85rem",
                 fontWeight: 600,
-                color: "#666",
+                color: "var(--text-dim)",
                 lineHeight: "1.2",
               }}
             >
@@ -947,7 +947,7 @@ function Dashboard() {
             <span
               className="kpi-value"
               style={{
-                color: "#1f2937",
+                color: "var(--text)",
                 fontSize: "2rem",
                 fontWeight: 700,
                 letterSpacing: "-0.5px",
@@ -957,7 +957,7 @@ function Dashboard() {
             </span>
             <span
               className="kpi-change neutral"
-              style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}
+              style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: 500 }}
             >
               Saldo em aberto
             </span>
@@ -968,8 +968,8 @@ function Dashboard() {
           className="kpi-card animate-in"
           style={{
             "--delay": 5,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            border: "1px solid #e5e7eb",
+            boxShadow: "var(--shadow)",
+            border: "1px solid var(--border)",
           }}
         >
           <div className="kpi-icon" style={{ background: "#888" }}>
@@ -991,7 +991,7 @@ function Dashboard() {
               style={{
                 fontSize: "0.85rem",
                 fontWeight: 600,
-                color: "#666",
+                color: "var(--text-dim)",
                 lineHeight: "1.2",
               }}
             >
@@ -1000,7 +1000,7 @@ function Dashboard() {
             <span
               className="kpi-value"
               style={{
-                color: "#1f2937",
+                color: "var(--text)",
                 fontSize: "2rem",
                 fontWeight: 700,
                 letterSpacing: "-0.5px",
@@ -1010,7 +1010,7 @@ function Dashboard() {
             </span>
             <span
               className="kpi-change positive"
-              style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}
+              style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: 500 }}
             >
               Parcelas quitadas
             </span>
@@ -1021,8 +1021,8 @@ function Dashboard() {
           className="kpi-card animate-in"
           style={{
             "--delay": 6,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            border: "1px solid #e5e7eb",
+            boxShadow: "var(--shadow)",
+            border: "1px solid var(--border)",
           }}
         >
           <div className="kpi-icon" style={{ background: "var(--red)" }}>
@@ -1045,7 +1045,7 @@ function Dashboard() {
               style={{
                 fontSize: "0.85rem",
                 fontWeight: 600,
-                color: "#666",
+                color: "var(--text-dim)",
                 lineHeight: "1.2",
               }}
             >
@@ -1054,7 +1054,7 @@ function Dashboard() {
             <span
               className="kpi-value"
               style={{
-                color: "#1f2937",
+                color: "var(--text)",
                 fontSize: "2rem",
                 fontWeight: 700,
                 letterSpacing: "-0.5px",
@@ -1064,7 +1064,7 @@ function Dashboard() {
             </span>
             <span
               className="kpi-change negative"
-              style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}
+              style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: 500 }}
             >
               {kpis.overdueCount} empréstimo{kpis.overdueCount !== 1 ? "s" : ""}
             </span>
@@ -1077,16 +1077,16 @@ function Dashboard() {
         style={{
           marginBottom: 24,
           padding: "24px",
-          background: "white",
+          background: "var(--bg-secondary)",
           borderRadius: "12px",
-          border: "1px solid #e5e7eb",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow)",
         }}
         className="animate-in"
       >
         <div style={{ marginBottom: 20 }}>
           <h3 style={{ marginBottom: 4 }}>📊 Fluxo de Caixa (3 Meses)</h3>
-          <p style={{ fontSize: "0.9rem", color: "#666" }}>
+          <p style={{ fontSize: "0.9rem", color: "var(--text-dim)" }}>
             Tendência de entradas, saídas e saldo nos últimos 3 meses
           </p>
         </div>
