@@ -187,9 +187,8 @@ export default function App() {
   const getInitialTheme = () => {
     const saved = localStorage.getItem("theme");
     if (saved) return saved;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+    // Force dark theme by default (app UI optimized for dark)
+    return "dark";
   };
   const [theme, setTheme] = useState(getInitialTheme);
   useEffect(() => {
