@@ -27,7 +27,7 @@ const NewLoginPage = () => {
       setIsLoading(false);
 
       if (
-        email === "financeiro@fidelizacred.com" &&
+        email === "login" &&
         password === (localStorage.getItem("fc_admin_password") || "361011")
       ) {
         localStorage.setItem(
@@ -217,7 +217,7 @@ const NewLoginPage = () => {
                   margin: "0.25rem 0 0 0",
                 }}
               >
-                Demo: financeiro@fidelizacred.com
+                Demo: login
               </p>
             </div>
 

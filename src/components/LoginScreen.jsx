@@ -40,7 +40,7 @@ function LoginScreen() {
 
     // Credenciais de teste do projeto
     if (
-      username === "financeiro@fidelizacred.com" &&
+      username === "login" &&
       password === (localStorage.getItem("fc_admin_password") || "361011")
     ) {
       setLoading(true);
@@ -170,7 +170,7 @@ function LoginScreen() {
               <input
                 id="login-user"
                 type="text"
-                placeholder="financeiro@fidelizacred.com"
+                placeholder="login"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required

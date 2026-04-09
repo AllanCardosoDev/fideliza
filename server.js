@@ -26,7 +26,7 @@ const MIME = {
 createServer((req, res) => {
   // Remove query string
   const urlPath = req.url.split("?")[0];
-  
+
   // Se for request da raiz, serve index.html
   if (urlPath === "/") {
     readFile(join(DIST, "index.html"), (err, data) => {
@@ -40,24 +40,24 @@ createServer((req, res) => {
     });
     return;
   }
-  
+
   // Tenta servir arquivo estático
   const filePath = join(DIST, urlPath);
   const ext = extname(filePath).toLowerCase();
-  
+
   readFile(filePath, (err, data) => {
     if (err) {
       // Se arquivo não encontrado e é uma rota (sem extensão ou extensão de rota)
       // serve index.html para SPA routing
       const isAsset = /\.[a-zA-Z0-9]+$/.test(urlPath);
-      
+
       if (isAsset) {
         // É um arquivo com extensão que não existe
         res.writeHead(404, { "Content-Type": "text/plain" });
         res.end("Not found");
         return;
       }
-      
+
       // É uma rota SPA, serve index.html
       readFile(join(DIST, "index.html"), (err2, html) => {
         if (err2) {
@@ -70,7 +70,7 @@ createServer((req, res) => {
       });
       return;
     }
-    
+
     // Arquivo encontrado, retorna com o MIME type correto
     res.writeHead(200, {
       "Content-Type": MIME[ext] || "application/octet-stream",
