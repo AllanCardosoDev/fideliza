@@ -82,12 +82,16 @@ export default function DocumentUploadGoogle({
 
       // Callback para atualizar lista de documentos com detalhes
       if (onUploadSuccess) {
-        setTimeout(() => onUploadSuccess({
-          fileName: result.fileName || selectedFile.name,
-          fileSize: result.fileSize || selectedFile.size,
-          fileUrl: result.fileUrl,
-          uploadedAt: result.uploadedAt,
-        }), 1500);
+        setTimeout(
+          () =>
+            onUploadSuccess({
+              fileName: result.fileName || selectedFile.name,
+              fileSize: result.fileSize || selectedFile.size,
+              fileUrl: result.fileUrl,
+              uploadedAt: result.uploadedAt,
+            }),
+          1500,
+        );
       }
     } catch (error) {
       console.error("Erro ao fazer upload:", error);
@@ -116,14 +120,34 @@ export default function DocumentUploadGoogle({
           </p>
         )}
 
-        {!isSignedIn && (
+        {/* Estado de carregamento inicial */}
+        {isLoading && (
+          <div
+            style={{
+              padding: 24,
+              textAlign: "center",
+              color: "var(--text-dim)",
+            }}
+          >
+            <p>⏳ Inicializando Google Drive...</p>
+          </div>
+        )}
+
+        {/* Erro ao inicializar */}
+        {authError && !isSignedIn && !isLoading && (
+          <div className="message message-error">
+            ❌ {authError}
+          </div>
+        )}
+
+        {!isLoading && !isSignedIn && !authError && (
           <div className="message message-warning">
             🔐 Você precisa autenticar com Google para enviar documentos
           </div>
         )}
 
         {/* Botão de Login (se não estiver logado) */}
-        {!isSignedIn && (
+        {!isLoading && !isSignedIn && (
           <button
             onClick={handleSignIn}
             className="upload-btn"
@@ -134,7 +158,7 @@ export default function DocumentUploadGoogle({
         )}
 
         {/* Forma de envio (só aparece se estiver logado) */}
-        {isSignedIn && (
+        {!isLoading && isSignedIn && (
           <>
             {/* Select Document Type */}
             <div className="form-group">
