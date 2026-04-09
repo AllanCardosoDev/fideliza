@@ -709,7 +709,13 @@ function Dashboard() {
                     : "Aviso: Sem dados no banco"
                   : "⚠️ ERRO: Supabase não conectado"}
               </strong>
-              <div style={{ fontSize: "0.85rem", color: "var(--text-dim)", marginTop: 4 }}>
+              <div
+                style={{
+                  fontSize: "0.85rem",
+                  color: "var(--text-dim)",
+                  marginTop: 4,
+                }}
+              >
                 {supabase ? (
                   <>
                     Clientes: {clients.length} | Empréstimos: {loans.length} |
@@ -795,7 +801,11 @@ function Dashboard() {
               </span>
               <span
                 className="kpi-change positive"
-                style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: 500 }}
+                style={{
+                  fontSize: "0.8rem",
+                  color: "var(--text-dim)",
+                  fontWeight: 500,
+                }}
               >
                 Saldo operacional
               </span>
@@ -852,7 +862,11 @@ function Dashboard() {
             </span>
             <span
               className="kpi-change positive"
-              style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: 500 }}
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--text-dim)",
+                fontWeight: 500,
+              }}
             >
               Em andamento
             </span>
@@ -905,7 +919,11 @@ function Dashboard() {
             </span>
             <span
               className="kpi-change positive"
-              style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: 500 }}
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--text-dim)",
+                fontWeight: 500,
+              }}
             >
               Capital liberado
             </span>
@@ -957,7 +975,11 @@ function Dashboard() {
             </span>
             <span
               className="kpi-change neutral"
-              style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: 500 }}
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--text-dim)",
+                fontWeight: 500,
+              }}
             >
               Saldo em aberto
             </span>
@@ -1010,7 +1032,11 @@ function Dashboard() {
             </span>
             <span
               className="kpi-change positive"
-              style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: 500 }}
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--text-dim)",
+                fontWeight: 500,
+              }}
             >
               Parcelas quitadas
             </span>
@@ -1064,7 +1090,11 @@ function Dashboard() {
             </span>
             <span
               className="kpi-change negative"
-              style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: 500 }}
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--text-dim)",
+                fontWeight: 500,
+              }}
             >
               {kpis.overdueCount} empréstimo{kpis.overdueCount !== 1 ? "s" : ""}
             </span>

@@ -321,7 +321,10 @@ export default function App() {
         const submissionData = { ...loanData };
         let toastMessage = "Empréstimo salvo!";
 
-        console.log("[App.createLoan] Dados a salvar (com protocolo):", submissionData);
+        console.log(
+          "[App.createLoan] Dados a salvar (com protocolo):",
+          submissionData,
+        );
 
         if (userRole === "employee") {
           // EMPLOYEE: ALWAYS force pending status - this is non-negotiable

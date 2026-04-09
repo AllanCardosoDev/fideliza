@@ -29,14 +29,8 @@ ChartJS.register(
 );
 
 function Relatorios() {
-  const {
-    loans,
-    clients,
-    transactions,
-    currentUser,
-    userRole,
-    caixa,
-  } = useContext(AppContext);
+  const { loans, clients, transactions, currentUser, userRole, caixa } =
+    useContext(AppContext);
   const { theme } = useContext(ThemeContext);
 
   // State para busca de protocolo

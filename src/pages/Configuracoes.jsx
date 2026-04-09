@@ -35,7 +35,10 @@ function Configuracoes() {
     e.preventDefault();
     setPwError("");
     setPwSuccess(false);
-    if (pwForm.email !== "login" && pwForm.email !== "financeiro@fidelizacred.com") {
+    if (
+      pwForm.email !== "login" &&
+      pwForm.email !== "financeiro@fidelizacred.com"
+    ) {
       setPwError("E-mail não corresponde à conta principal.");
       return;
     }
