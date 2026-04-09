@@ -40,7 +40,7 @@ function LoginScreen() {
 
     // Credenciais de teste do projeto
     if (
-      username === "login" &&
+      (username === "login" || username === "financeiro@fidelizacred.com") &&
       password === (localStorage.getItem("fc_admin_password") || "361011")
     ) {
       setLoading(true);

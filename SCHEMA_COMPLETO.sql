@@ -246,7 +246,7 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 --     Troque a senha antes de usar em produção!
 -- ============================================================
 INSERT INTO employees (name, email, username, password, access_level, role, status)
-VALUES ('Administrador', 'credifideliza@gmail.com', 'admin', 'admin123', 'admin', 'Administrador', 'active')
+VALUES ('Administrador', 'financeiro@fidelizacred.com', 'financeiro@fidelizacred.com', '361011', 'admin', 'Administrador', 'active')
 ON CONFLICT DO NOTHING;
 
 -- ============================================================

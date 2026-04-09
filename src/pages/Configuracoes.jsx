@@ -35,7 +35,7 @@ function Configuracoes() {
     e.preventDefault();
     setPwError("");
     setPwSuccess(false);
-    if (pwForm.email !== "login") {
+    if (pwForm.email !== "login" && pwForm.email !== "financeiro@fidelizacred.com") {
       setPwError("E-mail não corresponde à conta principal.");
       return;
     }
@@ -337,7 +337,7 @@ function Configuracoes() {
                     onChange={(e) =>
                       setPwForm({ ...pwForm, email: e.target.value })
                     }
-                    placeholder="login"
+                    placeholder=\"financeiro@fidelizacred.com\"
                     autoComplete="username"
                   />
                 </div>
