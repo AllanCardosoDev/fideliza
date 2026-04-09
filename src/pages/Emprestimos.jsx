@@ -8,6 +8,7 @@ import {
   calcPMT,
   buildAmortizationTable,
   getClientName,
+  generateProtocol,
 } from "../utils/helpers";
 import { buildInstallments } from "../utils/finance";
 import jsPDF from "jspdf";
@@ -103,8 +104,13 @@ function LoanForm({
     e.preventDefault();
     if (!validate()) return;
     const clientObj = clients.find((c) => c.id === parseInt(form.client_id));
+    
+    // Gerar protocolo automaticamente se não existir (novo empréstimo)
+    const protocol = form.protocol || generateProtocol();
+    
     onSave({
       ...form,
+      protocol, // Sempre incluir protocolo
       client: clientObj ? clientObj.name : form.client,
       client_id: clientObj ? clientObj.id : form.client_id || null,
       value: parseFloat(String(form.value).replace(",", ".")) || 0,

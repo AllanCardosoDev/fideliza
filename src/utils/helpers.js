@@ -141,6 +141,21 @@ export const buildAmortizationTable = (principal, rate, n, startDate) => {
   return rows;
 };
 
+/**
+ * Gera um protocolo único no formato: DD.MM/YYYY/NNNN
+ * DD.MM = data atual
+ * YYYY = ano
+ * NNNN = número aleatório de 4 dígitos para garantir unicidade
+ */
+export const generateProtocol = () => {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = now.getFullYear();
+  const random = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+  return `${day}.${month}/${year}/${random}`;
+};
+
 // ── CNPJ / CEP Data Lookup ─────────────────────────────────────────────────────
 
 /**
@@ -153,7 +168,7 @@ export const fetchCNPJData = async (cnpjDigits) => {
     if (digits.length !== 14) return null;
 
     const response = await fetch(
-      `https://brasilapi.com.br/api/cnpj/v1/${digits}`
+      `https://brasilapi.com.br/api/cnpj/v1/${digits}`,
     );
     if (!response.ok) return null;
 
@@ -163,10 +178,16 @@ export const fetchCNPJData = async (cnpjDigits) => {
     phone = phone.replace(/\D/g, "");
 
     // Optionally combine street prefix if logradouro doesn't have it
-    const streetPrefix = data.descricao_tipo_de_logradouro ? data.descricao_tipo_de_logradouro + " " : "";
+    const streetPrefix = data.descricao_tipo_de_logradouro
+      ? data.descricao_tipo_de_logradouro + " "
+      : "";
     let street = data.logradouro || "";
     // Avoid "RUA RUA X"
-    if (streetPrefix && street && !street.toUpperCase().startsWith(streetPrefix.trim().toUpperCase())) {
+    if (
+      streetPrefix &&
+      street &&
+      !street.toUpperCase().startsWith(streetPrefix.trim().toUpperCase())
+    ) {
       street = streetPrefix + street;
     }
 
@@ -199,9 +220,7 @@ export const fetchCEPData = async (cepDigits) => {
     const digits = cepDigits.replace(/\D/g, "");
     if (digits.length !== 8) return null;
 
-    const response = await fetch(
-      `https://viacep.com.br/ws/${digits}/json/`
-    );
+    const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
     if (!response.ok) return null;
 
     const data = await response.json();
