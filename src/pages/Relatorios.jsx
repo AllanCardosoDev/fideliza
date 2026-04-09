@@ -29,8 +29,14 @@ ChartJS.register(
 );
 
 function Relatorios() {
-  const { loans, clients, transactions, currentUser, userRole, caixa } =
-    useContext(AppContext);
+  const {
+    loans,
+    clients,
+    transactions,
+    currentUser,
+    userRole,
+    caixa,
+  } = useContext(AppContext);
   const { theme } = useContext(ThemeContext);
 
   // State para busca de protocolo
@@ -66,9 +72,16 @@ function Relatorios() {
   const availableProtocols = useMemo(() => {
     return accessibleLoans
       .filter((l) => l.protocol)
-      .map((l) => ({ id: l.id, protocol: l.protocol, client: l.client }))
+      .map((l) => {
+        const clientObj = clients.find((c) => c.id === l.client_id);
+        return {
+          id: l.id,
+          protocol: l.protocol,
+          client: getClientName(clientObj?.name || l.client || ""),
+        };
+      })
       .sort((a, b) => (b.protocol || "").localeCompare(a.protocol || ""));
-  }, [accessibleLoans]);
+  }, [accessibleLoans, clients]);
 
   // Get selected loan detail (AFTER accessibleLoans is defined)
   const selectedLoanDetail = useMemo(() => {
@@ -755,6 +768,16 @@ function Relatorios() {
       >
         <div className="card-header">
           <h3>🔍 Buscar por Protocolo</h3>
+          {availableProtocols.length === 0 && (
+            <span
+              className="badge"
+              style={{ fontSize: "0.8rem", color: "var(--red)" }}
+            >
+              {accessibleLoans.length > 0
+                ? `${accessibleLoans.length} empréstimos sem protocolo`
+                : "Nenhum empréstimo encontrado"}
+            </span>
+          )}
         </div>
         <div
           style={{
