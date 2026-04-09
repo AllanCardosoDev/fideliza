@@ -48,6 +48,7 @@ const EMPTY_LOAN = {
   start_date: "",
   status: "active",
   notes: "",
+  protocol: "", // Protocolo será gerado automaticamente
 };
 
 function LoanForm({
@@ -104,10 +105,11 @@ function LoanForm({
     e.preventDefault();
     if (!validate()) return;
     const clientObj = clients.find((c) => c.id === parseInt(form.client_id));
-    
+
     // Gerar protocolo automaticamente se não existir (novo empréstimo)
     const protocol = form.protocol || generateProtocol();
-    
+    console.log("[LoanForm] Salvando empréstimo com protocolo:", protocol);
+
     onSave({
       ...form,
       protocol, // Sempre incluir protocolo

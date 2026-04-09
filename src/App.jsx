@@ -321,6 +321,8 @@ export default function App() {
         const submissionData = { ...loanData };
         let toastMessage = "Empréstimo salvo!";
 
+        console.log("[App.createLoan] Dados a salvar (com protocolo):", submissionData);
+
         if (userRole === "employee") {
           // EMPLOYEE: ALWAYS force pending status - this is non-negotiable
           submissionData.status = "pending";
@@ -362,6 +364,7 @@ export default function App() {
 
         const res = await apiCreateLoan(submissionData);
         const created = Array.isArray(res.data) ? res.data[0] : res.data;
+        console.log("[App.createLoan] Resposta do Supabase:", created);
         const mapped = mapLoanFromApi(created);
         setLoans((prev) => [mapped, ...prev]);
         addToast(toastMessage, "success");
