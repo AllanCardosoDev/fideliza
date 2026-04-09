@@ -45,20 +45,26 @@ createServer((req, res) => {
   const filePath = join(DIST, urlPath);
   const ext = extname(filePath).toLowerCase();
 
-  readFile(filePath, (err, data) => {
-    if (err) {
-      // Se arquivo não encontrado e é uma rota (sem extensão ou extensão de rota)
-      // serve index.html para SPA routing
-      const isAsset = /\.[a-zA-Z0-9]+$/.test(urlPath);
-
-      if (isAsset) {
-        // É um arquivo com extensão que não existe
+  // Se tem extensão, é provavelmente um arquivo estático
+  if (ext) {
+    readFile(filePath, (err, data) => {
+      if (err) {
         res.writeHead(404, { "Content-Type": "text/plain" });
         res.end("Not found");
         return;
       }
+      res.writeHead(200, {
+        "Content-Type": MIME[ext] || "application/octet-stream",
+      });
+      res.end(data);
+    });
+    return;
+  }
 
-      // É uma rota SPA, serve index.html
+  // Sem extensão = é uma rota SPA, tenta servir arquivo
+  readFile(filePath, (err, data) => {
+    if (err) {
+      // Arquivo não existe, serve index.html para SPA routing
       readFile(join(DIST, "index.html"), (err2, html) => {
         if (err2) {
           res.writeHead(404, { "Content-Type": "text/plain" });
