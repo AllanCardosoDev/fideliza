@@ -2,39 +2,41 @@ import React, { useContext, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../App";
 import DocumentUploadGoogle from "../components/DocumentUploadGoogle";
-import { api } from "../services/api";
+import { useGoogleDriveOAuth } from "../hooks/useGoogleDriveOAuth";
 import "../styles/documentos.css";
 
 export default function Documentos() {
   const navigate = useNavigate();
   const { clientId } = useParams();
   const { clients } = useContext(AppContext);
+  const { isSignedIn, listClientDocuments, deleteFile } = useGoogleDriveOAuth();
 
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
-  const [showUploadForm, setShowUploadForm] = useState(false);
 
   // Encontrar cliente
   const client = clients.find((c) => c.id === parseInt(clientId));
 
-  // Carregar documentos
+  // Carregar documentos quando signIn mudar ou clientId mudar
   useEffect(() => {
-    if (!clientId) return;
+    if (!clientId || !isSignedIn) {
+      setLoading(false);
+      return;
+    }
     loadDocuments();
-  }, [clientId]);
+  }, [clientId, isSignedIn]);
 
   const loadDocuments = async () => {
+    if (!client) return;
+
     try {
       setLoading(true);
-      // Aqui você faria uma chamada para a API
-      // const response = await api.get(`/documents/client/${clientId}`);
-      // setDocuments(response.data.data || []);
-
-      // Por enquanto, deixa vazia
-      setDocuments([]);
+      const docs = await listClientDocuments(client.name);
+      setDocuments(docs || []);
     } catch (error) {
       console.error("Erro ao carregar documentos:", error);
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
@@ -47,7 +49,7 @@ export default function Documentos() {
 
     setDeletingId(documentId);
     try {
-      // await api.delete(`/documents/${documentId}`);
+      await deleteFile(documentId);
       setDocuments((prev) => prev.filter((d) => d.id !== documentId));
     } catch (error) {
       console.error("Erro ao deletar documento:", error);
@@ -58,7 +60,7 @@ export default function Documentos() {
   };
 
   const handleUploadSuccess = () => {
-    setShowUploadForm(false);
+    // Recarregar documentos após upload
     loadDocuments();
   };
 
@@ -100,14 +102,22 @@ export default function Documentos() {
       <div className="documentos-container">
         {/* Upload Section */}
         <div className="upload-section">
-          <DocumentUploadGoogle clientId={client.id} clientName={client.name} />
+          <DocumentUploadGoogle
+            clientId={client.id}
+            clientName={client.name}
+            onUploadSuccess={handleUploadSuccess}
+          />
         </div>
 
         {/* Documents List */}
         <div className="documents-section">
           <h2>📑 Documentos Enviados</h2>
 
-          {loading ? (
+          {!isSignedIn ? (
+            <div className="empty-state">
+              <p>🔐 Faça login no Google para ver seus documentos</p>
+            </div>
+          ) : loading ? (
             <div className="loading">
               <p>⏳ Carregando documentos...</p>
             </div>
@@ -123,28 +133,33 @@ export default function Documentos() {
               {documents.map((doc) => (
                 <div key={doc.id} className="document-card">
                   <div className="document-icon">
-                    {doc.file_name.endsWith(".pdf") ? "📄" : "🖼️"}
+                    {doc.name.endsWith(".pdf") ? "📄" : "🖼️"}
                   </div>
                   <div className="document-info">
-                    <h3 className="document-name">{doc.file_name}</h3>
-                    <p className="document-type">{doc.document_type}</p>
-                    <p className="document-date">
-                      {new Date(doc.uploaded_at).toLocaleDateString("pt-BR")}
-                    </p>
-                    <p className="document-size">
-                      {(doc.file_size / 1024).toFixed(1)} KB
-                    </p>
+                    <h3 className="document-name">{doc.name}</h3>
+                    {doc.createdTime && (
+                      <p className="document-date">
+                        {new Date(doc.createdTime).toLocaleDateString("pt-BR")}
+                      </p>
+                    )}
+                    {doc.size && (
+                      <p className="document-size">
+                        {(doc.size / 1024).toFixed(1)} KB
+                      </p>
+                    )}
                   </div>
                   <div className="document-actions">
-                    <a
-                      href={doc.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-sm btn-outline"
-                      title="Abrir no Google Drive"
-                    >
-                      🔗
-                    </a>
+                    {doc.webViewLink && (
+                      <a
+                        href={doc.webViewLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm btn-outline"
+                        title="Abrir no Google Drive"
+                      >
+                        🔗
+                      </a>
+                    )}
                     <button
                       onClick={() => handleDocumentDeleted(doc.id)}
                       disabled={deletingId === doc.id}
