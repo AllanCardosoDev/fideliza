@@ -312,14 +312,9 @@ export default function LandingFull() {
 
           {/* Actions */}
           <div className="lp-header-actions">
-            <a
-              href="/login"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="lp-btn-entrar"
-            >
+            <Link to="/login" className="lp-btn-entrar">
               Entrar
-            </a>
+            </Link>
             <button
               className="lp-hamburger"
               aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
@@ -355,15 +350,13 @@ export default function LandingFull() {
                   </a>
                 ),
               )}
-              <a
-                href="/login"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/login"
                 className="lp-btn-entrar lp-btn-entrar-mobile"
                 onClick={() => setMenuOpen(false)}
               >
                 Entrar
-              </a>
+              </Link>
             </div>
           </nav>
         )}
