@@ -5,6 +5,8 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
+    // Proxy apenas em desenvolvimento local (npm run dev)
+    // Em produção (build), as requisições vão direto para o Express server
     proxy: {
       "/api": {
         target: "http://localhost:3000",
@@ -12,5 +14,10 @@ export default defineConfig({
         secure: false,
       },
     },
+  },
+  // Build para produção
+  build: {
+    outDir: "dist",
+    sourcemap: false,
   },
 });

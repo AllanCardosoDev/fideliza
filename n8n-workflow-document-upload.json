@@ -1,0 +1,161 @@
+{
+  "name": "Fidelizacred - Upload Documentos para Google Drive",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "api/upload",
+        "method": "POST",
+        "responseMode": "responseNode",
+        "responseData": "firstEntryJson"
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "id": "webhook-receive-files",
+      "name": "Webhook - Receber Documentos",
+      "webhookId": "fidelizacred-upload"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "",
+        "authentication": "none",
+        "responseFormat": "json"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [200, 0],
+      "id": "extract-file-data",
+      "name": "Extrair Dados do Arquivo",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "createFolder",
+        "parentFolderId": "{{$json.parentFolderId}}",
+        "folderName": "Documentos Clientes"
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [400, 0],
+      "id": "create-clients-folder",
+      "name": "Criar/Verificar Pasta 'Documentos Clientes'",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "COLOQUE_AQUI_ID_DA_CREDENCIAL",
+          "name": "Conta Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createFolder",
+        "parentFolderId": "={{$json.id}}",
+        "folderName": "={{$json.clientName}}_{{$json.clientId}}"
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [600, 0],
+      "id": "create-client-folder",
+      "name": "Criar Pasta Cliente",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "COLOQUE_AQUI_ID_DA_CREDENCIAL",
+          "name": "Conta Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "parentId": "={{$json.id}}",
+        "fileName": "={{$json.documentType}}_{{$json.fileName}}",
+        "fileContent": "={{$json.fileData}}"
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [800, 0],
+      "id": "upload-to-drive",
+      "name": "Enviar Para Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "COLOQUE_AQUI_ID_DA_CREDENCIAL",
+          "name": "Conta Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "responseData": "json",
+        "responseBody": "={{\"success\": true, \"message\": \"Documento enviado com sucesso!\", \"fileId\": $json.id, \"fileName\": $json.name}}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 0],
+      "id": "response-success",
+      "name": "Responder com Sucesso"
+    },
+    {
+      "parameters": {
+        "responseData": "json",
+        "responseBody": "={{\"success\": false, \"message\": $json.message}}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 100],
+      "id": "response-error",
+      "name": "Responder com Erro"
+    }
+  ],
+  "connections": {
+    "webhook-receive-files": {
+      "main": [
+        [
+          {
+            "node": "create-clients-folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "create-clients-folder": {
+      "main": [
+        [
+          {
+            "node": "create-client-folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "create-client-folder": {
+      "main": [
+        [
+          {
+            "node": "upload-to-drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload-to-drive": {
+      "main": [
+        [
+          {
+            "node": "response-success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "fidelizacred-setup"
+  }
+}
