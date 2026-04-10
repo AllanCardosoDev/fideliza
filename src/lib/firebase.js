@@ -23,6 +23,9 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
+// URL da API (usando VITE_API_URL em produção, senão localhost)
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 // Inicializar Firebase
 let app;
 try {
@@ -68,7 +71,10 @@ export async function uploadDocumentToFirebase(file, metadata) {
     formData.append("documentType", documentType);
 
     // Fazer upload via servidor (evita CORS!)
-    const response = await fetch("/api/firebase/upload", {
+    const uploadUrl = `${API_URL}/api/firebase/upload`;
+    console.log(`[FIREBASE] Enviando para: ${uploadUrl}`);
+
+    const response = await fetch(uploadUrl, {
       method: "POST",
       body: formData,
     });
@@ -190,7 +196,8 @@ export async function deleteDocument(docId, storagePath) {
     console.log(`[FIREBASE] Deletando documento: ${docId}`);
 
     // Deletar via servidor
-    const response = await fetch("/api/firebase/delete", {
+    const deleteUrl = `${API_URL}/api/firebase/delete`;
+    const response = await fetch(deleteUrl, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
