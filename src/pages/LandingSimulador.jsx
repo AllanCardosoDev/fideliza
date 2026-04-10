@@ -2,15 +2,59 @@ import React, { useState, useMemo } from "react";
 import LandingLayout from "../components/LandingLayout";
 import "../styles/landing.css";
 
-/* Taxa mensal dinâmica conforme valor solicitado */
-function getRate(value) {
-  if (value >= 500000) return 0.018;
-  if (value >= 200000) return 0.025;
-  if (value >= 50000) return 0.035;
-  return 0.042;
+const FAIXAS = [
+  { min: 1, max: 10000, taxa: 0.0655, label: "R$ 1 a R$ 10.000", pct: "6,55%" },
+  {
+    min: 10001,
+    max: 13000,
+    taxa: 0.063,
+    label: "R$ 10.001 a R$ 13.000",
+    pct: "6,3%",
+  },
+  {
+    min: 13001,
+    max: 17000,
+    taxa: 0.06,
+    label: "R$ 13.001 a R$ 17.000",
+    pct: "6%",
+  },
+  {
+    min: 17001,
+    max: 20000,
+    taxa: 0.057,
+    label: "R$ 17.001 a R$ 20.000",
+    pct: "5,7%",
+  },
+  {
+    min: 20001,
+    max: 25000,
+    taxa: 0.054,
+    label: "R$ 20.001 a R$ 25.000",
+    pct: "5,4%",
+  },
+  {
+    min: 25001,
+    max: 30000,
+    taxa: 0.052,
+    label: "R$ 25.001 a R$ 30.000",
+    pct: "5,2%",
+  },
+  {
+    min: 30001,
+    max: 40000,
+    taxa: 0.049,
+    label: "R$ 30.001 a R$ 40.000",
+    pct: "4,9%",
+  },
+];
+
+function getFaixa(value) {
+  return (
+    FAIXAS.find((f) => value >= f.min && value <= f.max) ||
+    FAIXAS[FAIXAS.length - 1]
+  );
 }
 
-/* Fórmula Price (PMT) */
 function calcPMT(pv, i, n) {
   if (i === 0) return pv / n;
   const factor = Math.pow(1 + i, n);
@@ -22,16 +66,15 @@ function fmt(value) {
 }
 
 export default function LandingSimulador() {
-  const [valor, setValor] = useState(50000);
+  const [valor, setValor] = useState(10000);
   const [prazo, setPrazo] = useState(24);
 
-  const taxa = useMemo(() => getRate(valor), [valor]);
+  const faixa = useMemo(() => getFaixa(valor), [valor]);
+  const taxa = faixa.taxa;
   const parcela = useMemo(
     () => calcPMT(valor, taxa, prazo),
     [valor, taxa, prazo],
   );
-  const totalPago = useMemo(() => parcela * prazo, [parcela, prazo]);
-  const totalJuros = useMemo(() => totalPago - valor, [totalPago, valor]);
 
   const handleWhatsApp = () => {
     const phone = "5592992202300";
@@ -47,7 +90,6 @@ export default function LandingSimulador() {
 
   return (
     <LandingLayout>
-      {/* ══ HERO ══ */}
       <section className="lp-inner-hero">
         <div className="lp-container lp-inner-hero-content">
           <h1 className="lp-inner-hero-title">
@@ -60,11 +102,9 @@ export default function LandingSimulador() {
         </div>
       </section>
 
-      {/* ══ SIMULADOR ══ */}
       <section className="lp-section lp-white">
         <div className="lp-container">
           <div className="lp-sim-wrapper">
-            {/* Painel esquerdo: inputs */}
             <div className="lp-sim-panel">
               <h2 className="lp-sim-panel-title">Dados da Operação</h2>
               <p className="lp-sim-panel-sub">
@@ -77,15 +117,12 @@ export default function LandingSimulador() {
                   type="number"
                   className="lp-sim-input"
                   value={valor}
-                  min={10000}
-                  max={1000000}
-                  step={1000}
+                  min={1000}
+                  max={40000}
+                  step={500}
                   onChange={(e) =>
                     setValor(
-                      Math.max(
-                        10000,
-                        Math.min(1000000, Number(e.target.value)),
-                      ),
+                      Math.max(1000, Math.min(40000, Number(e.target.value))),
                     )
                   }
                 />
@@ -93,23 +130,88 @@ export default function LandingSimulador() {
                   <input
                     type="range"
                     className="lp-sim-range"
-                    min={10000}
-                    max={1000000}
-                    step={5000}
+                    min={1000}
+                    max={40000}
+                    step={500}
                     value={valor}
                     onChange={(e) => setValor(Number(e.target.value))}
                   />
                   <div className="lp-sim-range-labels">
-                    <span>R$ 10.000</span>
-                    <span>R$ 1.000.000</span>
+                    <span>R$ 1.000</span>
+                    <span>R$ 40.000</span>
                   </div>
                 </div>
                 <span className="lp-sim-hint">
-                  Valor entre R$ 10.000 e R$ 1.000.000
+                  Valor entre R$ 1.000 e R$ 40.000
                 </span>
               </div>
 
-              <div className="lp-sim-field">
+              <div style={{ marginTop: "1rem" }}>
+                <p
+                  style={{
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    color: "#555",
+                    marginBottom: "0.4rem",
+                  }}
+                >
+                  Taxa por faixa de valor:
+                </p>
+                <table
+                  style={{
+                    width: "100%",
+                    fontSize: "0.78rem",
+                    borderCollapse: "collapse",
+                  }}
+                >
+                  <thead>
+                    <tr style={{ background: "#f0f4ff" }}>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          padding: "4px 8px",
+                          color: "#333",
+                        }}
+                      >
+                        Faixa
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "right",
+                          padding: "4px 8px",
+                          color: "#333",
+                        }}
+                      >
+                        Taxa a.m.
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {FAIXAS.map((f) => {
+                      const ativa = f.min === faixa.min;
+                      return (
+                        <tr
+                          key={f.min}
+                          style={{
+                            background: ativa ? "#1a3a6b" : "transparent",
+                            color: ativa ? "#fff" : "#444",
+                            fontWeight: ativa ? 700 : 400,
+                          }}
+                        >
+                          <td style={{ padding: "4px 8px" }}>{f.label}</td>
+                          <td
+                            style={{ padding: "4px 8px", textAlign: "right" }}
+                          >
+                            {f.pct}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="lp-sim-field" style={{ marginTop: "1.2rem" }}>
                 <label className="lp-sim-label">Prazo (meses)</label>
                 <input
                   type="number"
@@ -143,7 +245,6 @@ export default function LandingSimulador() {
               </div>
             </div>
 
-            {/* Painel direito: resultado */}
             <div className="lp-sim-result">
               <h2 className="lp-sim-result-title">Projeção Financeira</h2>
               <p className="lp-sim-result-sub">
@@ -168,9 +269,7 @@ export default function LandingSimulador() {
                 </div>
                 <div className="lp-sim-detail-row">
                   <span>Taxa Mensal:</span>
-                  <span className="lp-sim-detail-val">
-                    {(taxa * 100).toFixed(2).replace(".", ",")}% a.m.
-                  </span>
+                  <span className="lp-sim-detail-val">{faixa.pct} a.m.</span>
                 </div>
               </div>
 
@@ -180,7 +279,6 @@ export default function LandingSimulador() {
             </div>
           </div>
 
-          {/* Avisos */}
           <div className="lp-sim-avisos">
             <h3 className="lp-sim-avisos-title">Avisos Importantes</h3>
             <ul className="lp-sim-avisos-list">

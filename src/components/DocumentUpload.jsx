@@ -118,20 +118,15 @@ export function DocumentUpload({
       setLoading(true);
       setUploadError(null);
 
-      // 1. Upload para o Google Drive via Supabase Edge Function
+      // 1. Upload para o Backblaze B2 via backend (/api/upload)
       const formData = new FormData();
       formData.append("file", file);
       formData.append("clientId", String(clientId));
       formData.append("clientName", clientName || `cliente_${clientId}`);
       formData.append("documentType", selectedType || "documento");
 
-      const edgeFnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-to-drive`;
-      const response = await fetch(edgeFnUrl, {
+      const response = await fetch("/api/upload", {
         method: "POST",
-        headers: {
-          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
         body: formData,
       });
 
@@ -139,27 +134,27 @@ export function DocumentUpload({
         const errJson = await response.json().catch(() => ({}));
         throw new Error(
           errJson.error ||
-            `Erro HTTP ${response.status} ao enviar para o Google Drive`,
+            `Erro HTTP ${response.status} ao enviar para o Backblaze B2`,
         );
       }
 
-      const driveResult = await response.json();
-      if (!driveResult.success) {
+      const b2Result = await response.json();
+      if (!b2Result.success) {
         throw new Error(
-          driveResult.error || "Falha no upload para o Google Drive",
+          b2Result.error || "Falha no upload para o Backblaze B2",
         );
       }
 
-      const driveUrl = driveResult.fileUrl || driveResult.fileId || "";
+      const fileUrl = b2Result.fileUrl || "";
 
-      // 2. Salvar metadados no banco (file_url aponta para o Drive)
+      // 2. Salvar metadados no banco (file_url aponta para o B2)
       const { error: dbError } = await supabase.from("documents").insert([
         {
           client_id: clientId,
           employee_id: currentUser?.id || null,
           document_type: selectedType,
           file_name: file.name,
-          file_url: driveUrl,
+          file_url: fileUrl,
           file_size: file.size,
           mime_type: file.type,
         },
@@ -169,7 +164,7 @@ export function DocumentUpload({
         throw new Error(dbError.message || "Erro ao salvar registro no banco");
 
       alert(
-        `✅ Documento enviado ao Google Drive com sucesso!\n\nArquivo: ${file.name}\nTipo: ${selectedType}`,
+        `✅ Documento enviado com sucesso!\n\nArquivo: ${file.name}\nTipo: ${selectedType}`,
       );
 
       // Reset UI

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 
 const DOCUMENT_TYPES = [
   { value: "rg", label: "RG" },
@@ -51,25 +51,25 @@ export default function DocumentosGerenciador() {
 
   const handleUpload = async () => {
     if (!clientName.trim()) {
-      setMessage("⚠️ Digite o nome do cliente");
+      setMessage("âš ï¸ Digite o nome do cliente");
       setMessageType("warning");
       return;
     }
 
     if (!selectedType) {
-      setMessage("⚠️ Selecione um tipo de documento");
+      setMessage("âš ï¸ Selecione um tipo de documento");
       setMessageType("warning");
       return;
     }
 
     if (!selectedFile) {
-      setMessage("⚠️ Selecione um arquivo");
+      setMessage("âš ï¸ Selecione um arquivo");
       setMessageType("warning");
       return;
     }
 
     setUploading(true);
-    setMessage("⏳ Enviando arquivo...");
+    setMessage("â³ Enviando arquivo...");
     setMessageType("info");
 
     try {
@@ -87,17 +87,17 @@ export default function DocumentosGerenciador() {
       };
 
       setUploadedFiles([...uploadedFiles, newFile]);
-      setMessage(`✅ ${selectedFile.name} enviado com sucesso!`);
+      setMessage(`âœ… ${selectedFile.name} enviado com sucesso!`);
       setMessageType("success");
 
-      // Limpar formulário
+      // Limpar formulÃ¡rio
       setSelectedFile(null);
       setClientName("");
       setSelectedType("");
 
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
-      setMessage(`❌ Erro ao enviar: ${error.message}`);
+      setMessage(`âŒ Erro ao enviar: ${error.message}`);
       setMessageType("error");
     } finally {
       setUploading(false);
@@ -106,7 +106,7 @@ export default function DocumentosGerenciador() {
 
   const handleRemoveFile = (fileId) => {
     setUploadedFiles(uploadedFiles.filter((f) => f.id !== fileId));
-    setMessage("🗑️ Arquivo removido");
+    setMessage("ðŸ—‘ï¸ Arquivo removido");
     setMessageType("info");
     setTimeout(() => setMessage(""), 2000);
   };
@@ -125,7 +125,7 @@ export default function DocumentosGerenciador() {
     >
       {/* Header */}
       <div>
-        <h1 style={{ margin: "0 0 8px 0", fontSize: "1.8rem" }}>📄 Documentos</h1>
+        <h1 style={{ margin: "0 0 8px 0", fontSize: "1.8rem" }}>ðŸ“„ Documentos</h1>
         <p style={{ margin: 0, color: "var(--text-dim)", fontSize: "0.9rem" }}>
           Envie e gerencie documentos dos clientes
         </p>
@@ -140,7 +140,7 @@ export default function DocumentosGerenciador() {
           padding: 24,
         }}
       >
-        <h3 style={{ marginTop: 0, marginBottom: 20 }}>📤 Enviar Documento</h3>
+        <h3 style={{ marginTop: 0, marginBottom: 20 }}>ðŸ“¤ Enviar Documento</h3>
 
         {/* Fields Grid */}
         <div
@@ -167,7 +167,7 @@ export default function DocumentosGerenciador() {
               type="text"
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
-              placeholder="Ex: João Silva"
+              placeholder="Ex: JoÃ£o Silva"
               disabled={uploading}
               style={{
                 width: "100%",
@@ -252,12 +252,12 @@ export default function DocumentosGerenciador() {
             htmlFor="file-upload-docs"
             style={{ cursor: "pointer", display: "block" }}
           >
-            <div style={{ fontSize: "3rem", marginBottom: 12 }}>📎</div>
+            <div style={{ fontSize: "3rem", marginBottom: 12 }}>ðŸ“Ž</div>
             <h4 style={{ margin: "0 0 8px 0", color: "var(--text)", fontSize: "1.1rem" }}>
               {dragActive ? "Solte aqui" : "Arraste o arquivo ou clique"}
             </h4>
             <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-dim)" }}>
-              PDF, Word, Excel, Imagem (até 10MB)
+              PDF, Word, Excel, Imagem (atÃ© 10MB)
             </p>
           </label>
         </div>
@@ -277,7 +277,7 @@ export default function DocumentosGerenciador() {
             }}
           >
             <p style={{ margin: 0, fontSize: "0.95rem", color: "#047857" }}>
-              ✓ <strong>{selectedFile.name}</strong> ({(selectedFile.size / 1024).toFixed(1)} KB)
+              âœ“ <strong>{selectedFile.name}</strong> ({(selectedFile.size / 1024).toFixed(1)} KB)
             </p>
             <button
               onClick={() => setSelectedFile(null)}
@@ -291,7 +291,7 @@ export default function DocumentosGerenciador() {
                 fontWeight: "bold",
               }}
             >
-              ✕
+              âœ•
             </button>
           </div>
         )}
@@ -374,7 +374,7 @@ export default function DocumentosGerenciador() {
             }
           }}
         >
-          {uploading ? "⏳ Enviando..." : "📤 Enviar Documento"}
+          {uploading ? "â³ Enviando..." : "ðŸ“¤ Enviar Documento"}
         </button>
       </div>
 
@@ -389,7 +389,7 @@ export default function DocumentosGerenciador() {
           }}
         >
           <h3 style={{ marginTop: 0, marginBottom: 16 }}>
-            📑 Documentos Enviados ({uploadedFiles.length})
+            ðŸ“‘ Documentos Enviados ({uploadedFiles.length})
           </h3>
 
           <div
@@ -413,7 +413,7 @@ export default function DocumentosGerenciador() {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: "1.5rem" }}>📄</span>
+                  <span style={{ fontSize: "1.5rem" }}>ðŸ“„</span>
                   <button
                     onClick={() => handleRemoveFile(file.id)}
                     title="Remover"
@@ -426,7 +426,7 @@ export default function DocumentosGerenciador() {
                       padding: 0,
                     }}
                   >
-                    🗑️
+                    ðŸ—‘ï¸
                   </button>
                 </div>
                 <div>
@@ -479,378 +479,6 @@ export default function DocumentosGerenciador() {
               </div>
             ))}
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
-            <h2 style={{ marginTop: 0, marginBottom: 20, fontSize: "1.3rem" }}>
-              📤 Enviar Documento
-            </h2>
-
-            {/* Client Name Input */}
-            <div style={{ marginBottom: 20 }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: 8,
-                  fontWeight: "500",
-                  fontSize: "0.95rem",
-                }}
-              >
-                Nome do Cliente *
-              </label>
-              <input
-                type="text"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                disabled={uploading}
-                placeholder="Ex: João Silva"
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  fontSize: "0.95rem",
-                  backgroundColor: "var(--bg-primary)",
-                  color: "var(--text)",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-
-            {/* Document Type Selection */}
-            <div style={{ marginBottom: 20 }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: 8,
-                  fontWeight: "500",
-                  fontSize: "0.95rem",
-                }}
-              >
-                Tipo de Documento *
-              </label>
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                disabled={uploading}
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  fontSize: "0.95rem",
-                  backgroundColor: "var(--bg-primary)",
-                  color: "var(--text)",
-                  cursor: "pointer",
-                  boxSizing: "border-box",
-                }}
-              >
-                <option value="">-- Selecione um tipo --</option>
-                {DOCUMENT_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Drag & Drop Area */}
-            <div
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              style={{
-                padding: 32,
-                border: `2px dashed ${dragActive ? "var(--primary)" : "var(--border)"}`,
-                borderRadius: 8,
-                backgroundColor: dragActive
-                  ? "rgba(59, 130, 246, 0.05)"
-                  : "var(--bg-primary)",
-                textAlign: "center",
-                cursor: "pointer",
-                transition: "all 0.3s",
-                marginBottom: 20,
-              }}
-            >
-              <input
-                type="file"
-                id="file-upload"
-                onChange={handleFileSelect}
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
-                style={{ display: "none" }}
-                disabled={uploading}
-              />
-
-              <label
-                htmlFor="file-upload"
-                style={{ cursor: "pointer", display: "block" }}
-              >
-                <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>📄</div>
-                <h3
-                  style={{
-                    margin: "12px 0",
-                    color: "var(--text)",
-                    fontSize: "1rem",
-                  }}
-                >
-                  {dragActive
-                    ? "Solte o arquivo aqui"
-                    : "Arraste um arquivo ou clique"}
-                </h3>
-                <p
-                  style={{
-                    color: "var(--text-dim)",
-                    margin: "8px 0 0 0",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  PDF, Word, Imagem (máx 10MB)
-                </p>
-              </label>
-            </div>
-
-            {/* Selected File Info */}
-            {selectedFile && (
-              <div
-                style={{
-                  padding: 12,
-                  backgroundColor: "#ecfdf5",
-                  borderLeft: "4px solid #10b981",
-                  borderRadius: 4,
-                  marginBottom: 20,
-                }}
-              >
-                <p style={{ margin: 0, fontSize: "0.95rem", color: "#047857" }}>
-                  ✓ <strong>{selectedFile.name}</strong> (
-                  {(selectedFile.size / 1024).toFixed(1)} KB)
-                </p>
-              </div>
-            )}
-
-            {/* Upload Button */}
-            <button
-              onClick={handleUpload}
-              disabled={
-                !selectedFile ||
-                !selectedType ||
-                !clientName.trim() ||
-                uploading
-              }
-              style={{
-                width: "100%",
-                padding: "12px 24px",
-                backgroundColor:
-                  !selectedFile ||
-                  !selectedType ||
-                  !clientName.trim() ||
-                  uploading
-                    ? "#d1d5db"
-                    : "var(--primary)",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                fontSize: "1rem",
-                fontWeight: "500",
-                cursor:
-                  !selectedFile ||
-                  !selectedType ||
-                  !clientName.trim() ||
-                  uploading
-                    ? "not-allowed"
-                    : "pointer",
-                transition: "all 0.3s",
-              }}
-              onMouseEnter={(e) => {
-                if (
-                  !(
-                    !selectedFile ||
-                    !selectedType ||
-                    !clientName.trim() ||
-                    uploading
-                  )
-                ) {
-                  e.target.style.backgroundColor = "var(--primary-hover)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (
-                  !(
-                    !selectedFile ||
-                    !selectedType ||
-                    !clientName.trim() ||
-                    uploading
-                  )
-                ) {
-                  e.target.style.backgroundColor = "var(--primary)";
-                }
-              }}
-            >
-              {uploading ? "⏳ Enviando..." : "📤 Enviar para Google Drive"}
-            </button>
-          </div>
-
-          {/* Search Panel */}
-          <div
-            style={{
-              padding: 24,
-              backgroundColor: "var(--bg-secondary)",
-              borderRadius: 8,
-              border: "1px solid var(--border)",
-            }}
-          >
-            <h2 style={{ marginTop: 0, marginBottom: 20, fontSize: "1.3rem" }}>
-              🔍 Buscar Documentos
-            </h2>
-
-            {/* Client Name Input for Search */}
-            <div style={{ marginBottom: 20 }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: 8,
-                  fontWeight: "500",
-                  fontSize: "0.95rem",
-                }}
-              >
-                Nome do Cliente *
-              </label>
-              <input
-                type="text"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                disabled={loadingDocs}
-                placeholder="Ex: João Silva"
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  fontSize: "0.95rem",
-                  backgroundColor: "var(--bg-primary)",
-                  color: "var(--text)",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-
-            {/* Search Button */}
-            <button
-              onClick={loadDocuments}
-              disabled={!clientName.trim() || loadingDocs}
-              style={{
-                width: "100%",
-                padding: "12px 24px",
-                backgroundColor:
-                  !clientName.trim() || loadingDocs
-                    ? "#d1d5db"
-                    : "var(--primary)",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                fontSize: "1rem",
-                fontWeight: "500",
-                cursor:
-                  !clientName.trim() || loadingDocs ? "not-allowed" : "pointer",
-                transition: "all 0.3s",
-                marginBottom: 20,
-              }}
-            >
-              {loadingDocs ? "⏳ Buscando..." : "🔍 Buscar Documentos"}
-            </button>
-
-            {/* Documents Found */}
-            <div
-              style={{
-                padding: 16,
-                backgroundColor: "var(--bg-primary)",
-                borderRadius: 6,
-                minHeight: 100,
-              }}
-            >
-              {documents.length === 0 ? (
-                <p
-                  style={{
-                    margin: 0,
-                    color: "var(--text-dim)",
-                    textAlign: "center",
-                  }}
-                >
-                  📭 Nenhum documento
-                </p>
-              ) : (
-                <div>
-                  <p style={{ margin: "0 0 12px 0", fontWeight: "500" }}>
-                    📑 {documents.length} documento(s) encontrado(s)
-                  </p>
-                  <div style={{ maxHeight: 300, overflowY: "auto" }}>
-                    {documents.map((doc, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          padding: 8,
-                          backgroundColor: "var(--bg-secondary)",
-                          borderRadius: 4,
-                          marginBottom: 8,
-                          fontSize: "0.85rem",
-                          color: "var(--text-dim)",
-                        }}
-                      >
-                        {doc.name.endsWith(".pdf") ? "📄" : "🖼️"} {doc.name}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Message Display */}
-      {message && (
-        <div
-          style={{
-            padding: 16,
-            backgroundColor:
-              messageType === "success"
-                ? "#ecfdf5"
-                : messageType === "error"
-                  ? "#fef2f2"
-                  : messageType === "warning"
-                    ? "#fffbeb"
-                    : "#eff6ff",
-            borderLeft: `4px solid ${
-              messageType === "success"
-                ? "#10b981"
-                : messageType === "error"
-                  ? "#ef4444"
-                  : messageType === "warning"
-                    ? "#f59e0b"
-                    : "#3b82f6"
-            }`,
-            borderRadius: 4,
-            marginBottom: 20,
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: "0.95rem",
-              color:
-                messageType === "success"
-                  ? "#047857"
-                  : messageType === "error"
-                    ? "#7f1d1d"
-                    : messageType === "warning"
-                      ? "#92400e"
-                      : "#1e40af",
-            }}
-          >
-            {message}
-          </p>
         </div>
       )}
     </div>

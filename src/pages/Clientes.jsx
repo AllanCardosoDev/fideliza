@@ -714,6 +714,7 @@ function ClientForm({
               <div>
                 <DocumentUploadTab
                   clientName={form.name}
+                  clientId={editingClientId}
                   onUploadSuccess={(uploadInfo) => {
                     setUploadedDocuments((prev) => [...prev, uploadInfo]);
                   }}

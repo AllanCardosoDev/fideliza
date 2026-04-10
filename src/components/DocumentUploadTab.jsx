@@ -1,16 +1,19 @@
 import React, { useState } from "react";
-import { supabase } from "../services/supabaseClient";
+import {
+  uploadDocumentToFirebase,
+  getClientDocuments,
+  deleteDocument,
+} from "../lib/firebase";
 
 const DOCUMENT_TYPES = [
-  { value: "rg", label: "RG" },
+  { value: "identity", label: "RG/Identidade" },
   { value: "cpf", label: "CPF" },
-  { value: "cnpj", label: "CNPJ" },
-  { value: "comprovante_renda", label: "Comprovante de Renda" },
-  { value: "contrato", label: "Contrato" },
-  { value: "outros", label: "Outros" },
+  { value: "proof_of_address", label: "Comprovante de Endereço" },
+  { value: "bank_statement", label: "Extrato Bancário" },
+  { value: "income_statement", label: "Declaração de Renda" },
+  { value: "contract", label: "Contrato" },
+  { value: "other", label: "Outro" },
 ];
-
-const BUCKET_NAME = "documentos-clientes";
 
 export default function DocumentUploadTab({
   clientName,
@@ -25,6 +28,7 @@ export default function DocumentUploadTab({
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   // Carregar arquivos ao montar o componente ou quando clientId muda
   React.useEffect(() => {
@@ -34,49 +38,26 @@ export default function DocumentUploadTab({
   }, [clientId, clientName]);
 
   const loadFiles = async () => {
-    if (!supabase || !clientId) return;
+    if (!clientId) return;
 
     try {
       setLoadingFiles(true);
-      const safeName = clientName.replace(/[^a-z0-9]/gi, "_").toLowerCase();
-      const folderPath = `${clientId}_${safeName}`;
 
-      const { data: files, error } = await supabase.storage
-        .from(BUCKET_NAME)
-        .list(folderPath, {
-          limit: 100,
-          offset: 0,
-          sortBy: { column: "name", order: "asc" },
-        });
+      const documents = await getClientDocuments(clientId);
 
-      if (error) {
-        console.warn("Erro ao carregar arquivos:", error);
-        setUploadedFiles([]);
-        return;
-      }
-
-      if (files && files.length > 0) {
-        const filesWithUrls = files
-          .filter((f) => f.name && !f.id.endsWith("/")) // Remove pastas
-          .map((f) => {
-            const { data: publicData } = supabase.storage
-              .from(BUCKET_NAME)
-              .getPublicUrl(`${folderPath}/${f.name}`);
-
-            return {
-              name: f.name,
-              size: f.metadata?.size || 0,
-              updated: f.updated_at,
-              url: publicData?.publicUrl,
-            };
-          });
-
-        setUploadedFiles(filesWithUrls);
-      } else {
-        setUploadedFiles([]);
-      }
+      setUploadedFiles(
+        documents.map((doc) => ({
+          id: doc.id,
+          name: doc.fileName,
+          size: doc.fileSize || 0,
+          updated: doc.createdAt,
+          url: doc.downloadUrl,
+          type: doc.documentType,
+          storagePath: doc.storagePath,
+        })),
+      );
     } catch (error) {
-      console.error("Erro ao carregar arquivos:", error);
+      console.error("Erro ao carregar documentos:", error);
       setUploadedFiles([]);
     } finally {
       setLoadingFiles(false);
@@ -126,63 +107,28 @@ export default function DocumentUploadTab({
       return;
     }
 
-    if (!supabase) {
-      setMessage(
-        "❌ Erro: Supabase não configurado. Verifique as variáveis de ambiente.",
-      );
-      setMessageType("error");
-      return;
-    }
-
     setUploading(true);
-    setMessage("📤 Enviando arquivo para Supabase...");
+    setMessage("📤 Enviando documento para Firebase...");
     setMessageType("info");
 
     try {
-      // Criar caminho: documentos-clientes/cliente_id_nome/documenttype_filename
-      const safeName = clientName.replace(/[^a-z0-9]/gi, "_").toLowerCase();
-      const folderPath = `${clientId}_${safeName}`;
-      const docType = (selectedType || "documento").replace(/\s+/g, "_");
-
-      // Remove espaços do nome do arquivo
-      const cleanFileName = selectedFile.name.replace(/\s+/g, "_");
-      const fileName = `${docType}_${cleanFileName}`;
-      const filePath = `${folderPath}/${fileName}`;
-
-      console.log("📁 Estrutura de upload:", { folderPath, filePath });
-
-      // Upload para Supabase Storage
-      const { data, error } = await supabase.storage
-        .from(BUCKET_NAME)
-        .upload(filePath, selectedFile, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      // Obter URL pública do arquivo
-      const { data: publicData } = supabase.storage
-        .from(BUCKET_NAME)
-        .getPublicUrl(filePath);
-
-      const fileUrl = publicData?.publicUrl;
+      const result = await uploadDocumentToFirebase(selectedFile, {
+        clientId: String(clientId),
+        clientName: clientName || `cliente_${clientId}`,
+        documentType: selectedType,
+      });
 
       setMessage(`✅ ${selectedFile.name} enviado com sucesso!`);
       setMessageType("success");
 
-      // Recarregar lista de arquivos após sucesso
       await loadFiles();
 
       if (onUploadSuccess) {
         onUploadSuccess({
-          fileName: cleanFileName,
+          fileName: selectedFile.name,
           fileSize: selectedFile.size,
           documentType: selectedType,
-          filePath: filePath,
-          fileUrl: fileUrl,
+          fileUrl: result.fileUrl,
           uploadedAt: new Date().toISOString(),
         });
       }
@@ -192,20 +138,35 @@ export default function DocumentUploadTab({
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
       console.error("Erro no upload:", error);
-
-      let errorMsg = error.message;
-      if (error.message.includes("Failed to fetch")) {
-        errorMsg = "Erro de conexão com Supabase.";
-      } else if (error.message.includes("bucket")) {
-        errorMsg = "Bucket 'documentos-clientes' não existe ou sem acesso.";
-      } else if (error.message.includes("duplicate")) {
-        errorMsg = "Arquivo com este nome já existe.";
-      }
-
-      setMessage(`❌ Erro: ${errorMsg}`);
+      setMessage(`❌ Erro: ${error.message}`);
       setMessageType("error");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDeleteFile = async (file) => {
+    if (!window.confirm(`Tem certeza que deseja deletar "${file.name}"?`)) {
+      return;
+    }
+
+    setDeletingId(file.id);
+    setMessage("🗑️ Deletando arquivo...");
+    setMessageType("info");
+
+    try {
+      await deleteDocument(file.id, file.storagePath);
+      setMessage(`✅ Arquivo deletado com sucesso!`);
+      setMessageType("success");
+
+      await loadFiles();
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error) {
+      console.error("Erro ao deletar:", error);
+      setMessage(`❌ Erro ao deletar: ${error.message}`);
+      setMessageType("error");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -229,21 +190,6 @@ export default function DocumentUploadTab({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Server Status */}
-      <div
-        style={{
-          padding: 12,
-          backgroundColor: "#eff6ff",
-          borderLeft: "4px solid #3b82f6",
-          borderRadius: 8,
-        }}
-      >
-        <p style={{ margin: 0, fontSize: "0.85rem", color: "#1e40af" }}>
-          💡 Certifique-se de rodar: <code>npm run server</code> em outro
-          terminal
-        </p>
-      </div>
-
       {/* Info Header */}
       <div
         style={{
@@ -436,7 +382,7 @@ export default function DocumentUploadTab({
           width: "100%",
         }}
       >
-        {uploading ? "⏳ Enviando..." : "📤 Enviar para Google Drive"}
+        {uploading ? "⏳ Enviando..." : "📤 Enviar Documento"}
       </button>
 
       {/* Lista de Arquivos Enviados */}
@@ -454,7 +400,7 @@ export default function DocumentUploadTab({
           }}
         >
           <h3 style={{ margin: "0 0 12px 0", fontSize: "1rem" }}>
-            📄 Arquivos Armazenados
+            📄 Arquivos Armazenados no Firebase
           </h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {uploadedFiles.map((file, idx) => (
@@ -471,50 +417,84 @@ export default function DocumentUploadTab({
                   border: "1px solid var(--border)",
                 }}
               >
-                <div style={{ flex: 1 }}>
-                  <strong>{file.name}</strong>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <strong
+                    title={file.name}
+                    style={{
+                      display: "block",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {file.name}
+                  </strong>
                   <div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>
                     {file.size > 0
                       ? `${(file.size / 1024).toFixed(2)} KB`
-                      : "Arquivo"}
+                      : "Arquivo"}{" "}
+                    • {file.type}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 6 }}>
                   <a
                     href={file.url}
                     download
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
-                      padding: "6px 12px",
+                      padding: "6px 10px",
                       backgroundColor: "var(--primary)",
                       color: "white",
                       borderRadius: 4,
                       textDecoration: "none",
-                      fontSize: "0.85rem",
+                      fontSize: "0.8rem",
                       cursor: "pointer",
                       border: "none",
+                      whiteSpace: "nowrap",
                     }}
+                    title="Baixar arquivo"
                   >
-                    ⬇️ Baixar
+                    ⬇️
                   </a>
                   <a
                     href={file.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
-                      padding: "6px 12px",
+                      padding: "6px 10px",
                       backgroundColor: "#6b7280",
                       color: "white",
                       borderRadius: 4,
                       textDecoration: "none",
-                      fontSize: "0.85rem",
+                      fontSize: "0.8rem",
                       cursor: "pointer",
                       border: "none",
+                      whiteSpace: "nowrap",
                     }}
+                    title="Visualizar arquivo"
                   >
-                    👁️ Ver
+                    👁️
                   </a>
+                  <button
+                    onClick={() => handleDeleteFile(file)}
+                    disabled={deletingId === file.id}
+                    style={{
+                      padding: "6px 10px",
+                      backgroundColor:
+                        deletingId === file.id ? "#ccc" : "#ef4444",
+                      color: "white",
+                      borderRadius: 4,
+                      border: "none",
+                      fontSize: "0.8rem",
+                      cursor:
+                        deletingId === file.id ? "not-allowed" : "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                    title="Deletar arquivo"
+                  >
+                    {deletingId === file.id ? "🗑️..." : "🗑️"}
+                  </button>
                 </div>
               </div>
             ))}
