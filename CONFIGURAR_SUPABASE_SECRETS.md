@@ -1,0 +1,55 @@
+# 🔐 Como Configurar Secrets do Supabase (MANUAL)
+
+## Passo 1: Obtenha a Chave de Admin
+
+1. Abra: https://app.supabase.com
+2. Selecione o projeto **Fideliza**
+3. Vá em: **Settings** (canto esquerdo) → **API**
+4. Procure por **"service_role"** (em azul)
+5. **Copie a chave** (é uma string longa começando com `eyJ...`)
+
+## Passo 2: Configure as Secrets
+
+Na mesma página (Settings → API):
+
+- Procure a seção **"Secrets"** ou **"Environment Variables"** (pode estar em Settings → Edge Functions)
+
+### Secret 1: GOOGLE_SERVICE_ACCOUNT
+
+**Nome:** `GOOGLE_SERVICE_ACCOUNT`
+
+**Valor:** Abra o arquivo `credentials/google-service-account.json` e **copie TODO o conteúdo** (de `{` até `}`):
+
+```json
+{
+  "type": "service_account",
+  "project_id": "fifth-sol-492819-s6",
+  "private_key_id": "babedb2788d56331865f03d0fd9f6fe43c8f2c2c",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDqydzT/wcGhJFc\nfha4Mps6buX1qs4Q8fDC+i36kNw4TWliIoGb8IfZUOmU7DxfzjZaxtb7y/lk9Z0W\nlvwSaZ6m8j5jnNnnXNstnQ6P6Rl7QBdroTKF9CNXUGsgiH0mpo3sy0LQx3po5eKM\nLkv1caLydp1OmU73HAPh2iygXqyaJ6e/1TMIV5K2olMB5mZzZD0SS4QtX9GiHWH+\npZzL2uhnDurg4V19nj3gmJP4b9TYr06DKQ4J0iaKx5h5eHtb/ri+SWaKh3QJZz5H\na17hLxYKUIRB9EmpLHRdwN34rgXNaUK92aQFiVA3Nt10PpgZHMcZdJFajEUALDRq\nKjvTCl/DAgMBAAECggEADbFEDaD72ed1Sr2XuZpJ7zh0dMVHSzmw3s4UTF6SWT46\nfRyiDmQSqBvN4397beLqzJR4CSs2GiswxBZ+ENzUAcxy0wBcvN9vcNON+9qOP9/W\n/dHizmkUfo0UEkujcNOZx0t7VA2uF9wAQEia6W99H0LHncPXFRYvK8a7f4bF7h9x\nUT9r/dcN0AzPY0VF81qSS6tPNh1MMlWBuKNjabDEfTJYw3pLumewVIk0EqyD0bHT\ngEjo7S6smLQD0ymGxAb6NXcLUaexudzTrc+oNF+5XQzHElek2aOnq4XU6XAgKjWJ\n86bDlz2xNqB8E1AM7PL9wbo9MkHuAg/Z4KrNRDE0sQKBgQD5y/FtroSKN3ZTx7U2\nHNSIeY2andb1J+H65MKqrp3QoOx5ly24a/kUgjDUReDWt81U+8D4xgQsQzdbNKrJ\nuSMNefITVsuLjUL9xmNmafkiMhim0QaIgNYhAYH/+4BIihVa9kCGOlkZFCBa8r4w\nZ9a0dqbO7cM15CqzOFy56chNbQKBgQDwnoHDH3sth7QjqMzFIIo8jR0ZjrJeT4St\nBOoK0yVepFIAXsvx6m7980R56XF8+cou+NggpTigKlGk4D31UQZjCD4WeIWx/gwJ\nIqIGZUPEo22TSRgj716tb/ikbz6C1V2KMepZARa7eCxusXOHX9Sxu9rTZ56TVGm7\nB/YaKJcT7wKBgQD0L6Jdxuj3uEnqkmIZeMtmcfSz/bIBSzCEM5X8hd/t7zHblqZy\nDtKZcr9K8thc7aZCeivkxKWVo0t81BpUQa/7X4b90q39SGUBcSsAFX4eKHyirdjG\nHbO05iVv2CpKPvmrRuhCjs1ET8FlRsAWz5s6JHbh99kJWHdJZUJ31wogbQKBgALz\nrtvZ8wTn+UnGtFxmvctoX8cEfSOzDgmhWc2wMXEryuW+Q/o/ygTLizeDqaTC27wf\nyWb9H+i3HDFNnvT3fYCRhVF5QQqh9zvVdO9nJqGu75Uy/FzUfvDZws8hnj60p2Ue\nn6Vf4guCuejRvH0Yq99SUqjtSIC+NF3dByXjAZd5AoGBAMGBR7KcWdoLaTz++fcK\nwF8qdKaLkFeg3g9hLKrsDFK2dX2EmNT2hQk+g/7WoSI85Y/bpxc0OSj2Z7rPZFrF\nPKTL9x4CST8c7WldwMoPStQJ5xUyHW+QCt+47PQG4hGRWjihOCG5/4Df9cXnBFbd\nFPQ/IqKqJG1svgQK4ZceQfjr\n-----END PRIVATE KEY-----\n",
+  "client_email": "fideliza-drive@fifth-sol-492819-s6.iam.gserviceaccount.com",
+  "client_id": "114830772094458971637",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/fideliza-drive%40fifth-sol-492819-s6.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
+```
+
+### Secret 2: GOOGLE_CLIENTES_FOLDER_ID
+
+**Nome:** `GOOGLE_CLIENTES_FOLDER_ID`
+
+**Valor:**
+
+```
+1cMF0yQawpwshJlvLF30hDC1HeZiJlyNOf
+```
+
+## Passo 3: Clique em "Create Secret" ou "Save"
+
+Se houver botão **"Redeploy"** ou **"Sync"**, clique para aplicar.
+
+## Pronto! ✅
+
+Agora volta ao app e testa o upload de documentos. Deve funcionar!
