@@ -1,6 +1,6 @@
 /* ============================================
    FIDELIZA CRED — Design System
-   Light/Dark mode, gold accents, glassmorphism
+   APENAS TEMA CLARO - Sem dark mode
    ============================================ */
 
 /* FORÇA TEMA CLARO - Ignora preferência do sistema */
@@ -9,13 +9,13 @@ body {
   color-scheme: light;
 }
 
-/* --- Variáveis CSS para o Tema CLARO (Padrão) --- */
+/* --- Variáveis CSS para o Tema CLARO (ÚNICO) --- */
 :root {
   --bg-primary: #f0f2f5; /* Fundo principal da aplicação */
   --bg-secondary: #ffffff; /* Fundo de cards e elementos secundários */
   --bg-card: rgba(255, 255, 255, 0.8); /* Fundo de card com transparência */
   --bg-card-hover: rgba(240, 240, 240, 0.9); /* Fundo de card hover */
-  --bg-sidebar: #2c3e50; /* Fundo da sidebar (escuro) */
+  --bg-sidebar: #2c3e50; /* Fundo da sidebar */
   --border: rgba(0, 0, 0, 0.1); /* Borda leve */
   --border-focus: rgba(240, 200, 80, 0.5); /* Borda em foco */
 
@@ -39,10 +39,10 @@ body {
   --orange: #e67e22; /* Laranja */
   --orange-dim: rgba(230, 126, 34, 0.12);
 
-  --text: #2c3e50; /* Texto principal escuro */
+  --text: #2c3e50; /* Texto principal */
   --text-dim: #7f8c8d; /* Texto secundário/fraco */
   --text-label: #95a5a6; /* Texto de label */
-  --text-sidebar: #ecf0f1; /* Texto da sidebar (claro) */ /* NOVA VARIÁVEL */
+  --text-sidebar: #ecf0f1; /* Texto da sidebar */
 
   --radius: 12px;
   --radius-sm: 8px;
@@ -72,113 +72,6 @@ body {
 
   --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
-}
-
-/* --- Variáveis CSS para o Tema ESCURO (Aplicado via @media ou .dark-theme) --- */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #0a0e15;
-    --bg-secondary: #0f1420;
-    --bg-card: rgba(16, 22, 36, 0.7);
-    --bg-card-hover: rgba(22, 30, 48, 0.85);
-    --bg-sidebar: #0c1019;
-    --border: rgba(240, 200, 80, 0.08);
-    --border-focus: rgba(240, 200, 80, 0.3);
-
-    --gold: #f0c850;
-    --gold-dark: #9a7510;
-    --gold-gradient: linear-gradient(135deg, #f0c850, #d4a832, #9a7510);
-    --gold-glow: rgba(240, 200, 80, 0.15);
-
-    --green: #34d399;
-    --green-dim: rgba(52, 211, 153, 0.12);
-    --red: #f87171;
-    --red-dim: rgba(248, 113, 113, 0.12);
-    --blue: #60a5fa;
-    --blue-dim: rgba(96, 165, 250, 0.12);
-    --purple: #a78bfa;
-    --purple-dim: rgba(167, 139, 250, 0.12);
-    --orange: #fb923c;
-    --orange-dim: rgba(251, 146, 60, 0.12);
-
-    --text: #e8e6e2;
-    --text-dim: #6b7280;
-    --text-label: #9ca3af;
-    --text-sidebar: #e8e6e2; /* Texto da sidebar (claro) */ /* NOVA VARIÁVEL */
-
-    --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.6);
-  }
-}
-
-/* Força o tema claro quando a classe .light-theme é aplicada ao body */
-body.light-theme {
-  --bg-primary: #f0f2f5;
-  --bg-secondary: #ffffff;
-  --bg-card: rgba(255, 255, 255, 0.8);
-  --bg-card-hover: rgba(240, 240, 240, 0.9);
-  --bg-sidebar: #2c3e50;
-  --border: rgba(0, 0, 0, 0.1);
-  --border-focus: rgba(240, 200, 80, 0.5);
-
-  --gold: #f39c12;
-  --gold-dark: #e67e22;
-  --gold-gradient: linear-gradient(135deg, #f39c12, #e67e22);
-  --gold-glow: rgba(243, 156, 18, 0.15);
-
-  --green: #2ecc71;
-  --green-dim: rgba(46, 204, 113, 0.12);
-  --red: #e74c3c;
-  --red-dim: rgba(231, 76, 60, 0.12);
-  --blue: #3498db;
-  --blue-dim: rgba(52, 152, 219, 0.12);
-  --purple: #9b59b6;
-  --purple-dim: rgba(155, 89, 182, 0.12);
-  --orange: #e67e22;
-  --orange-dim: rgba(230, 126, 34, 0.12);
-
-  --text: #2c3e50;
-  --text-dim: #7f8c8d;
-  --text-label: #95a5a6;
-  --text-sidebar: #ecf0f1; /* Texto da sidebar (claro) */ /* NOVA VARIÁVEL */
-
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
-}
-
-/* Força o tema escuro quando a classe .dark-theme é aplicada ao body */
-body.dark-theme {
-  --bg-primary: #0a0e15;
-  --bg-secondary: #0f1420;
-  --bg-card: rgba(16, 22, 36, 0.7);
-  --bg-card-hover: rgba(22, 30, 48, 0.85);
-  --bg-sidebar: #0c1019;
-  --border: rgba(240, 200, 80, 0.08);
-  --border-focus: rgba(240, 200, 80, 0.3);
-
-  --gold: #f0c850;
-  --gold-dark: #9a7510;
-  --gold-gradient: linear-gradient(135deg, #f0c850, #d4a832, #9a7510);
-  --gold-glow: rgba(240, 200, 80, 0.15);
-
-  --green: #34d399;
-  --green-dim: rgba(52, 211, 153, 0.12);
-  --red: #f87171;
-  --red-dim: rgba(248, 113, 113, 0.12);
-  --blue: #60a5fa;
-  --blue-dim: rgba(96, 165, 250, 0.12);
-  --purple: #a78bfa;
-  --purple-dim: rgba(167, 139, 250, 0.12);
-  --orange: #fb923c;
-  --orange-dim: rgba(251, 146, 60, 0.12);
-
-  --text: #e8e6e2;
-  --text-dim: #6b7280;
-  --text-label: #9ca3af;
-  --text-sidebar: #e8e6e2; /* Texto da sidebar (claro) */ /* NOVA VARIÁVEL */
-
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.6);
 }
 
 /* ============================================
