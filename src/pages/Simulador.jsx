@@ -540,8 +540,8 @@ function Simulador() {
           width: 100%;
           padding: 12px 14px 12px 40px;
           border: 1px solid var(--border);
-          background: rgba(26, 26, 46, 0.8) !important;
-          color: #ffffff !important;
+          background: var(--bg-secondary);
+          color: var(--text);
           border-radius: 6px;
           font-size: 1rem;
           font-weight: 600;
@@ -549,7 +549,7 @@ function Simulador() {
         }
 
         .sim-input::placeholder {
-          color: rgba(255, 255, 255, 0.5) !important;
+          color: var(--text-dim);
         }
 
         .sim-input:focus {
@@ -562,19 +562,19 @@ function Simulador() {
         .sim-input:-webkit-autofill,
         .sim-input:-webkit-autofill:hover,
         .sim-input:-webkit-autofill:focus {
-          -webkit-box-shadow: 0 0 0 1000px rgba(26, 26, 46, 0.8) inset !important;
-          -webkit-text-fill-color: #ffffff !important;
+          -webkit-box-shadow: 0 0 0 1000px var(--bg-secondary) inset !important;
+          -webkit-text-fill-color: var(--text) !important;
         }
 
         /* Input number e date */
         input[type="number"].sim-input,
         input[type="date"].sim-input {
-          color: #ffffff !important;
+          color: var(--text);
         }
 
         input[type="number"]::placeholder,
         input[type="date"]::placeholder {
-          color: rgba(255, 255, 255, 0.5) !important;
+          color: var(--text-dim);
         }
 
         .sim-results-grid {
