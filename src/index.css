@@ -3,6 +3,12 @@
    Light/Dark mode, gold accents, glassmorphism
    ============================================ */
 
+/* FORÇA TEMA CLARO - Ignora preferência do sistema */
+:root,
+body {
+  color-scheme: light;
+}
+
 /* --- Variáveis CSS para o Tema CLARO (Padrão) --- */
 :root {
   --bg-primary: #f0f2f5; /* Fundo principal da aplicação */
