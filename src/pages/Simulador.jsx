@@ -39,7 +39,7 @@ function Simulador() {
 
   const calculations = useMemo(() => {
     const v = form.value;
-    const r = interestRate / 100;
+    const r = interestRate;
     const n = form.installments;
 
     const results = {};
@@ -185,7 +185,6 @@ function Simulador() {
     const [year, month, day] = dateStr.split("-");
     return `${day}/${month}/${year}`;
   };
-
   const handleExportFullPDF = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -229,7 +228,7 @@ function Simulador() {
 
     doc.text(`Valor: ${fmt(form.value)}`, margin, yPos);
     yPos += 6;
-    doc.text(`Taxa: ${form.interestRate.toFixed(2)}% a.m.`, margin, yPos);
+    doc.text(`Taxa: ${(interestRate * 100).toFixed(2)}% a.m.`, margin, yPos);
     yPos += 6;
     doc.text(`Parcelas: ${form.installments}`, margin, yPos);
     yPos += 6;
@@ -333,6 +332,8 @@ function Simulador() {
   };
 
   const handleExportClientPDF = () => {
+    if (!selectedCalculation || !selectedCalculation.rows) return;
+
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -378,7 +379,7 @@ function Simulador() {
 
     doc.text(`Valor: ${fmt(form.value)}`, margin, yPos);
     yPos += 6;
-    doc.text(`Taxa: ${form.interestRate.toFixed(2)}% a.m.`, margin, yPos);
+    doc.text(`Taxa: ${(interestRate * 100).toFixed(2)}% a.m.`, margin, yPos);
     yPos += 6;
     doc.text(`Parcelas: ${form.installments}`, margin, yPos);
     yPos += 6;

@@ -137,7 +137,12 @@ export const getEmployeeClients = (employeeId) =>
       .eq("employee_id", employeeId),
   );
 
-export const assignClientToEmployee = (clientId, employeeId, role = "viewer", assignedBy = null) =>
+export const assignClientToEmployee = (
+  clientId,
+  employeeId,
+  role = "viewer",
+  assignedBy = null,
+) =>
   wrap(
     supabase
       .from("client_assignments")
@@ -167,3 +172,18 @@ export const deleteClientAssignment = (clientId, employeeId) =>
       .eq("client_id", clientId)
       .eq("employee_id", employeeId),
   );
+
+// Funções para Contratos
+export const getContracts = () =>
+  wrap(
+    supabase
+      .from("contracts")
+      .select("*, clients(id, name, cpf_cnpj)")
+      .order("created_at", { ascending: false }),
+  );
+export const createContract = (contractData) =>
+  wrap(supabase.from("contracts").insert(contractData).select());
+export const updateContract = (id, contractData) =>
+  wrap(supabase.from("contracts").update(contractData).eq("id", id).select());
+export const deleteContract = (id) =>
+  wrap(supabase.from("contracts").delete().eq("id", id));

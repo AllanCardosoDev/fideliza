@@ -632,36 +632,10 @@ function Financeiro() {
 
       {/* CAIXA DISPLAY */}
       <div style={{ marginBottom: 24 }}>
-        <div
-          style={{
-            background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
-            padding: 24,
-            borderRadius: "var(--radius)",
-            color: "white",
-            boxShadow: "0 8px 25px rgba(30, 60, 114, 0.35)",
-          }}
-        >
-          <div style={{ textAlign: "center" }}>
-            <p
-              style={{
-                fontSize: "0.9rem",
-                opacity: 0.9,
-                marginBottom: 8,
-                fontWeight: 500,
-              }}
-            >
-              💰 CAIXA DISPONÍVEL
-            </p>
-            <h1
-              style={{
-                fontSize: "2.8rem",
-                fontWeight: "bold",
-                margin: "8px 0",
-                letterSpacing: "-1px",
-              }}
-            >
-              {fmt(caixaAmount)}
-            </h1>
+        <div className="caixa-card">
+          <div className="caixa-center">
+            <p className="caixa-title">💰 CAIXA DISPONÍVEL</p>
+            <h1 className="caixa-valor">{fmt(caixaAmount)}</h1>
             {userRole === "admin" && (
               <button
                 onClick={handleEditCaixa}
@@ -686,16 +660,7 @@ function Financeiro() {
                 ✏️ Editar Valor
               </button>
             )}
-            <p
-              style={{
-                fontSize: "0.85rem",
-                opacity: 0.85,
-                marginTop: 12,
-                fontWeight: 500,
-              }}
-            >
-              Capital disponível para operações
-            </p>
+            <p className="caixa-desc">Capital disponível para operações</p>
           </div>
         </div>
       </div>

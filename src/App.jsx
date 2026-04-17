@@ -29,6 +29,7 @@ import Configuracoes from "./pages/Configuracoes";
 import Cobrancas from "./pages/Cobrancas";
 import Recebimentos from "./pages/Recebimentos";
 import Simulador from "./pages/Simulador";
+import Contratos from "./pages/Contratos";
 import NotFound from "./pages/NotFound";
 import Modal from "./components/Modal";
 import ToastContainer from "./components/ToastContainer";
@@ -57,6 +58,10 @@ import {
   assignClientToEmployee,
   updateClientAssignment,
   deleteClientAssignment,
+  getContracts as apiGetContracts,
+  createContract as apiCreateContract,
+  updateContract as apiUpdateContract,
+  deleteContract as apiDeleteContract,
 } from "./services/api";
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -150,6 +155,7 @@ export default function App() {
   const [loans, setLoans] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [contracts, setContracts] = useState([]);
 
   const [settings, setSettings] = useState(() => {
     try {
@@ -228,14 +234,19 @@ export default function App() {
   const getInitialTheme = () => {
     const saved = localStorage.getItem("theme");
     if (saved) return saved;
-    // Force dark theme by default (app UI optimized for dark)
-    return "dark";
+    // Default to light theme on public/landing pages; dark is opt-in after login
+    return "light";
   };
-  const [theme, setTheme] = useState(getInitialTheme);
+  const [theme, setTheme] = useState(() => getInitialTheme());
   useEffect(() => {
-    document.body.className = theme === "dark" ? "dark-theme" : "light-theme";
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+    // Apply theme class only when authenticated. Public pages stay light.
+    if (isAuthenticated) {
+      document.body.className = theme === "dark" ? "dark-theme" : "light-theme";
+      localStorage.setItem("theme", theme);
+    } else {
+      document.body.className = "light-theme";
+    }
+  }, [theme, isAuthenticated]);
   const toggleTheme = () =>
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
 
@@ -1022,8 +1033,9 @@ export default function App() {
       getLoans(),
       getEmployees(),
       getNotifications(),
+      apiGetContracts(),
     ]);
-    const [cRes, tRes, lRes, eRes, nRes] = results;
+    const [cRes, tRes, lRes, eRes, nRes, contractsRes] = results;
     if (cRes.status === "fulfilled") setClients(cRes.value.data || []);
     if (tRes.status === "fulfilled") setTransactions(tRes.value.data || []);
     if (lRes.status === "fulfilled") {
@@ -1077,6 +1089,9 @@ export default function App() {
       });
       setNotifications(loadedNotifs);
     }
+    if (contractsRes.status === "fulfilled") {
+      setContracts(contractsRes.value.data || []);
+    }
   }, []);
 
   // Alias for reloading loans from Financeiro page
@@ -1092,6 +1107,44 @@ export default function App() {
       }
     } catch (err) {
       console.error("[App] Erro ao recarregar loans:", err);
+    }
+  }, []);
+
+  // ── Contratos CRUD ────────────────────────────────────────────────────────
+  const createContractRecord = useCallback(async (contractData) => {
+    try {
+      const res = await apiCreateContract(contractData);
+      const created = res.data?.[0] || res.data;
+      if (created) setContracts((prev) => [created, ...prev]);
+      return created;
+    } catch (err) {
+      console.error("[App] Erro ao criar contrato:", err);
+      throw err;
+    }
+  }, []);
+
+  const editContractRecord = useCallback(async (id, contractData) => {
+    try {
+      const res = await apiUpdateContract(id, contractData);
+      const updated = res.data?.[0] || res.data;
+      if (updated)
+        setContracts((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, ...updated } : c)),
+        );
+      return updated;
+    } catch (err) {
+      console.error("[App] Erro ao atualizar contrato:", err);
+      throw err;
+    }
+  }, []);
+
+  const removeContractRecord = useCallback(async (id) => {
+    try {
+      await apiDeleteContract(id);
+      setContracts((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      console.error("[App] Erro ao remover contrato:", err);
+      throw err;
     }
   }, []);
 
@@ -1157,6 +1210,11 @@ export default function App() {
     addNotification,
     markNotificationAsRead,
     clearAllNotifications,
+    contracts,
+    setContracts,
+    createContractRecord,
+    editContractRecord,
+    removeContractRecord,
   };
 
   return (
@@ -1186,6 +1244,7 @@ export default function App() {
               />
               <Route path="/emprestimos" element={<Emprestimos />} />
               <Route path="/simulador" element={<Simulador />} />
+              <Route path="/contratos" element={<Contratos />} />
               <Route
                 path="/cobrancas"
                 element={
