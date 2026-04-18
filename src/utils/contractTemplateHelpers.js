@@ -231,7 +231,7 @@ export const generateContractPDF = (contractData) => {
   y = 36;
   doc.setFillColor(...LIGHT_GREEN);
   doc.roundedRect(mL, y, cW, 10, 2, 2, "F");
-  doc.setTextColor(...GREEN[0], ...GREEN.slice(1));
+  doc.setTextColor(GREEN[0], GREEN[1], GREEN[2]);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.text("PROTOCOLO:", mL + 3, y + 6.5);
@@ -515,33 +515,59 @@ export const generateContractWord = async (contractData) => {
 
   const zip = new PizZip(arrayBuffer);
 
-  // ─── PÓS-PROCESSAMENTO DO XML (SUBSTITUIÇÃO AGRESSIVA E CORES) ───
+  // ─── PÓS-PROCESSAMENTO DO XML ───
   try {
     const xmlPath = "word/document.xml";
     let xmlContent = zip.file(xmlPath).asText();
 
-    // 1. Substituir textos fixos da "Elaine" e endereços antigos (Hardcoded no template)
-    // Buscamos padrões comuns descritos pelo usuário
+    // PASSO 1: Desfragmentar tags {CAMPO} que o Word pode ter quebrado
+    // Ex: {MU</w:t></w:r><w:r><w:t>TUARIA_NAME} → {MUTUARIA_NAME}
+    const campos = [
+      "MUTUARIA_NAME", "MUTUARIA_CNPJ", "MUTUARIA_ADDRESS",
+      "VALOR_CONTRATADO", "DATA_CONTRATO", "DATA_CONTRATO_EXTENSO",
+      "QTDE_PARCELAS", "TAXA_JUROS", "VALOR_PARCELA", "ALIQUOTA_IOF",
+      "PROTOCOL", "START_DATE", "VALOR_TOTAL", "JUROS",
+    ];
+    // Regex genérica: chave abre, letras intercaladas com tags XML opcionais, chave fecha
+    campos.forEach((campo) => {
+      const chars = campo.split("");
+      let pat = "\\{";
+      for (let i = 0; i < chars.length; i++) {
+        if (i > 0) pat += "(?:<[^>]*>)*"; // tags XML opcionais entre letras
+        pat += chars[i];
+      }
+      pat += "(?:<[^>]*>)*\\}";
+      xmlContent = xmlContent.replace(new RegExp(pat, "g"), `{${campo}}`);
+    });
+
+    // PASSO 2: Substituir textos hardcoded do template
+    // Protocolo no cabeçalho
+    xmlContent = xmlContent.replace(/04\.13\/0016\/2026/g, protocol || "—");
+
+    // Data por extenso ("13 de Abril de 2026" ou similar)
     xmlContent = xmlContent.replace(
-      /Travessa Lapa, nº 01 Qd 11 Cj Canaranas I, Bairro Cidade Nova - Manaus, AM\./g,
-      mutuaria_address || "—",
+      /\d{1,2} de [A-Za-zç]+ de \d{4}/g,
+      fmtDateLongLocal(data_contrato),
     );
-    xmlContent = xmlContent.replace(
-      /ELAINE MEIRELES GUIMARAES OLIVEIRA VEREADOR/g,
-      (mutuaria_name || "—").toUpperCase(),
-    );
-    xmlContent = xmlContent.replace(/25380152000198/g, mutuaria_cnpj || "—");
-    xmlContent = xmlContent.replace(/13 de Abril de 2026/g, fmtDateLongLocal(data_contrato));
+    // Data curta 13.04.2026
     xmlContent = xmlContent.replace(/13\.04\.2026/g, fmtDateBRLocal(data_contrato));
 
-    // 2. Substituir Vermelho (EE0000) por Preto (000000)
-    xmlContent = xmlContent.replace(/w:val="EE0000"/g, 'w:val="000000"');
+    // Quantidade de parcelas (18 hardcoded no template — sem tag)
+    // Cuidadoso: só trocar >18< se seguido de </w:t> (campo de texto, não layout)
+    xmlContent = xmlContent.replace(/>18<\/w:t>/g, `>${qtde_parcelas || "—"}</w:t>`);
 
-    // 3. Corrigir fragmentação de tags: {<...TAG...>} -> {TAG}
+    // Nomes antigos de mutuárias que podem estar no template
+    xmlContent = xmlContent.replace(/ELAINE MEIRELES GUIMARAES OLIVEIRA VEREADOR/g, (mutuaria_name || "—").toUpperCase());
+    xmlContent = xmlContent.replace(/SAMIA ZANIS DE SOUZA/g, (mutuaria_name || "—").toUpperCase());
+    xmlContent = xmlContent.replace(/25380152000198/g, mutuaria_cnpj || "—");
+    xmlContent = xmlContent.replace(/39\.770\.347\/0001-59/g, mutuaria_cnpj || "—");
     xmlContent = xmlContent.replace(
-      /\{<[^>]+>([^<]+)<[^>]+>\}/g,
-      (match, p1) => `{${p1}}`,
+      /Travessa Lapa[^<]*/g,
+      mutuaria_address || "—",
     );
+
+    // PASSO 3: Vermelho → Preto
+    xmlContent = xmlContent.replace(/w:val="EE0000"/g, 'w:val="000000"');
 
     zip.file(xmlPath, xmlContent);
   } catch (err) {
@@ -556,7 +582,8 @@ export const generateContractWord = async (contractData) => {
   // Tabela de parcelas para o Word (caso o template suporte loops {#installments})
   const installments = buildInstallmentRows(contractData);
 
-  doc.render({
+  // Dados para renderização
+  const renderData = {
     MUTUARIA_NAME: (mutuaria_name || "—").toUpperCase(),
     MUTUARIA_CNPJ: mutuaria_cnpj || "—",
     MUTUARIA_ADDRESS: mutuaria_address || "—",
@@ -569,11 +596,18 @@ export const generateContractWord = async (contractData) => {
     ALIQUOTA_IOF: fmtNum(aliquota_iof),
     PROTOCOL: protocol || "—",
     START_DATE: fmtDateBRLocal(start_date),
-    INSTALLMENTS: installments, // Para uso como {#INSTALLMENTS} {data} {valor} {/INSTALLMENTS}
-    // Fallbacks para nomes que podem estar no template
+    INSTALLMENTS: installments,
+    // Fallbacks para nomes alternativos
     VALOR_TOTAL: fmtNum(valor_contratado),
     JUROS: String(taxa_juros || "—"),
-  });
+  };
+
+  try {
+    doc.render(renderData);
+  } catch (err) {
+    console.warn("Aviso ao renderizar template:", err.message);
+    // Continuar mesmo com erro - pode ser que nem todos os marcadores existam
+  }
 
   const out = doc.getZip().generate({
     type: "blob",
