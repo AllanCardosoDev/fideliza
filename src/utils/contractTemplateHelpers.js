@@ -358,7 +358,7 @@ export const generateContractPDF = async (contractData) => {
   doc.text("Vencimento das parcelas:", mL, y);
   y += 1;
 
-  const installments = buildInstallmentRows(contractData);
+  const installments = buildInstallmentRows({ ...contractData, valor_parcela });
 
   // Dividir em 2 colunas
   const half = Math.ceil(installments.length / 2);
@@ -633,6 +633,119 @@ export const generateContractWord = async (contractData) => {
 
     // PASSO 3: Vermelho → Preto
     xmlContent = xmlContent.replace(/w:val="EE0000"/g, 'w:val="000000"');
+
+    // PASSO 4: Reconstruir a tabela de parcelas dinamicamente
+    // A tabela de parcelas é a 4ª <w:tbl> (índice 3) no XML.
+    // Tem 6 colunas: [Parcela, Data, Valor] x 2 (esquerda e direita).
+    // Precisamos remover todas as linhas de dados e recriá-las com base nos dados reais.
+    try {
+      const xmlDoc = new DOMParser().parseFromString(xmlContent, "text/xml");
+      const xmlSerializer = new XMLSerializer();
+      const allTables = xmlDoc.getElementsByTagName("w:tbl");
+
+      // Localizar a tabela de parcelas pelo conteúdo "Parcela" + "Data" + "Valor"
+      let installmentTable = null;
+      for (let t = 0; t < allTables.length; t++) {
+        const txt = allTables[t].textContent;
+        if (txt.includes("Parcela") && txt.includes("Data") && txt.includes("Valor") && txt.includes("20.0")) {
+          installmentTable = allTables[t];
+          break;
+        }
+      }
+
+      if (installmentTable) {
+        const tblRows = installmentTable.getElementsByTagName("w:tr");
+        // Guardar a linha de cabeçalho (row 0) e a primeira linha de dados (row 1) como template
+        const headerRow = tblRows[0];
+        const templateRow = tblRows[1]; // row com 6 células preenchidas
+
+        // Construir as parcelas dinâmicas
+        const installments = buildInstallmentRows({ ...contractData, valor_parcela });
+        const half = Math.ceil(installments.length / 2);
+
+        // Função helper: criar uma célula XML com texto
+        const makeCell = (templateCell, text, widthDxa) => {
+          const cell = templateCell.cloneNode(true);
+          // Substituir largura da célula
+          const tcW = cell.getElementsByTagName("w:tcW")[0];
+          if (tcW && widthDxa) tcW.setAttribute("w:w", String(widthDxa));
+          // Substituir o texto em <w:t>
+          const wts = cell.getElementsByTagName("w:t");
+          if (wts.length > 0) {
+            wts[0].textContent = text;
+            // Remover w:t extras (caso haja fragmentação)
+            while (wts.length > 1) {
+              wts[1].parentNode.removeChild(wts[1]);
+            }
+          }
+          // Gerar IDs únicos para evitar conflitos
+          const paras = cell.getElementsByTagName("w:p");
+          for (let p = 0; p < paras.length; p++) {
+            if (paras[p].getAttributeNS) {
+              paras[p].setAttribute("w14:paraId", Math.random().toString(16).substr(2, 8).toUpperCase());
+              paras[p].setAttribute("w14:textId", Math.random().toString(16).substr(2, 8).toUpperCase());
+            }
+          }
+          return cell;
+        };
+
+        // Capturar as 6 células template da row 1
+        const templateCells = templateRow.getElementsByTagName("w:tc");
+        const cellTemplates = [];
+        for (let c = 0; c < 6; c++) {
+          cellTemplates.push(templateCells[c]);
+        }
+
+        // Larguras das colunas originais
+        const widths = [988, 1842, 1843, 996, 1843, 1843];
+
+        // Remover todas as linhas de dados existentes (manter apenas o header)
+        const rowsToRemove = [];
+        for (let r = tblRows.length - 1; r >= 1; r--) {
+          rowsToRemove.push(tblRows[r]);
+        }
+        rowsToRemove.forEach(row => installmentTable.removeChild(row));
+
+        // Criar novas linhas
+        for (let i = 0; i < half; i++) {
+          const leftItem = installments[i];
+          const rightItem = installments[i + half]; // pode ser undefined
+
+          // Criar uma nova <w:tr>
+          const newRow = xmlDoc.createElementNS("http://schemas.openxmlformats.org/wordprocessingml/2006/main", "w:tr");
+          newRow.setAttribute("w14:paraId", Math.random().toString(16).substr(2, 8).toUpperCase());
+          newRow.setAttribute("w14:textId", "77777777");
+
+          // Célula 0: número esquerda
+          newRow.appendChild(makeCell(cellTemplates[0], leftItem.numero, widths[0]));
+          // Célula 1: data esquerda
+          newRow.appendChild(makeCell(cellTemplates[1], leftItem.data, widths[1]));
+          // Célula 2: valor esquerda
+          newRow.appendChild(makeCell(cellTemplates[2], leftItem.valor, widths[2]));
+
+          if (rightItem) {
+            // Célula 3: número direita
+            newRow.appendChild(makeCell(cellTemplates[3], rightItem.numero, widths[3]));
+            // Célula 4: data direita
+            newRow.appendChild(makeCell(cellTemplates[4], rightItem.data, widths[4]));
+            // Célula 5: valor direita
+            newRow.appendChild(makeCell(cellTemplates[5], rightItem.valor, widths[5]));
+          } else {
+            // Células vazias
+            newRow.appendChild(makeCell(cellTemplates[3], "", widths[3]));
+            newRow.appendChild(makeCell(cellTemplates[4], "", widths[4]));
+            newRow.appendChild(makeCell(cellTemplates[5], "", widths[5]));
+          }
+
+          installmentTable.appendChild(newRow);
+        }
+
+        // Serializar de volta
+        xmlContent = xmlSerializer.serializeToString(xmlDoc);
+      }
+    } catch (rebuildErr) {
+      console.warn("Aviso: Não foi possível reconstruir a tabela de parcelas:", rebuildErr);
+    }
 
     zip.file(xmlPath, xmlContent);
   } catch (err) {
