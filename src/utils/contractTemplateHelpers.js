@@ -218,60 +218,25 @@ export const generateContractPDF = (contractData) => {
   const mR = 20;
   const cW = pW - mL - mR;
 
-  // ── Cores
-  const GREEN = [22, 163, 74];
-  const DARK = [30, 30, 30];
-  const GRAY = [100, 100, 100];
-  const LIGHT_GREEN = [220, 252, 231];
-  const WHITE = [255, 255, 255];
+  // ── Cores: Somente Preto (Padrão MS Word)
+  const BLACK = [0, 0, 0];
 
-  let y = 0;
+  let y = 20;
 
-  // ── Cabeçalho verde
-  doc.setFillColor(...GREEN);
-  doc.rect(0, 0, pW, 28, "F");
-  doc.setTextColor(...WHITE);
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.text("FidelizaCred", mL, 12);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text("Empresa Simples de Crédito  •  CNPJ 63.611.352/0001-01", mL, 19);
-  doc.text("Rua Ouro Preto nº 484 – Coroado – Manaus, Amazonas", mL, 24);
-
-  // ── Linha de protocolo
-  y = 36;
-  doc.setFillColor(...LIGHT_GREEN);
-  doc.roundedRect(mL, y, cW, 10, 2, 2, "F");
-  doc.setTextColor(GREEN[0], GREEN[1], GREEN[2]);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text("PROTOCOLO:", mL + 3, y + 6.5);
-  doc.setFont("helvetica", "bold");
+  // ── Título Centralizado
+  doc.setTextColor(...BLACK);
   doc.setFontSize(11);
-  doc.text(protocol || "—", mL + 30, y + 6.5);
-
-  // ── Título
-  y = 54;
-  doc.setTextColor(...DARK);
-  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
-  doc.text("CONTRATO DE EMPRÉSTIMO", pW / 2, y, { align: "center" });
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...GRAY);
-  doc.text(
-    `Celebrado de acordo com a Lei Complementar nº 167 de 25/04/2018`,
-    pW / 2,
-    y + 6,
-    { align: "center" },
-  );
+  doc.text("INSTRUMENTO CONTRATUAL PARTICULAR DE MÚTUO FINANCEIRO", pW / 2, y, { align: "center" });
+  
+  y += 7;
+  doc.text(protocol || "—", pW / 2, y, { align: "center" });
 
   // ── Intro
-  y = 68;
-  doc.setTextColor(...DARK);
-  doc.setFontSize(9);
-  const introText = `O presente contrato define as condições gerais aplicáveis ao Empréstimo, concedido por FIDELIZA CRED – EMPRESA DE CRÉDITO, inscrita no CNPJ pelo número ${MUTUANTE.cnpj}, doravante denominada Mutuante, e ${mutuaria_name || "—"}, inscrita no CNPJ pelo número ${mutuaria_cnpj || "—"}, doravante denominado Mutuário, de acordo com a Lei Complementar nº 167 de 25/04/2018.`;
+  y += 12;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  const introText = `O presente contrato define as condições gerais aplicáveis ao Empréstimo, concedido por ${MUTUANTE.razaoSocial}, inscrita no CNPJ pelo número ${MUTUANTE.cnpj}, doravante denominada Mutuante, e ${(mutuaria_name || "—").toUpperCase()}, inscrita no CNPJ pelo número ${mutuaria_cnpj || "—"}, doravante denominado Mutuário, de acordo com a Lei Complementar nº 167 de 25/04/2018.`;
   const introLines = doc.splitTextToSize(introText, cW);
   doc.text(introLines, mL, y);
   y += introLines.length * 5 + 4;
@@ -291,42 +256,38 @@ export const generateContractPDF = (contractData) => {
   for (const clausula of clausulas) {
     checkPage(16);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(...GREEN);
+    doc.setFontSize(10);
     doc.text(clausula.titulo, mL, y);
-    y += 6;
+    y += 5;
 
     for (const item of clausula.itens) {
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8.5);
-      doc.setTextColor(...DARK);
+      doc.setFontSize(10);
       const lines = doc.splitTextToSize("   " + item, cW);
-      checkPage(lines.length * 4.5 + 2);
+      checkPage(lines.length * 5 + 2);
       doc.text(lines, mL, y);
-      y += lines.length * 4.5 + 2;
+      y += lines.length * 5 + 2;
     }
-    y += 3;
+    y += 2;
   }
 
   // ── Data e Assinaturas
   checkPage(50);
   y += 5;
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(...DARK);
-  const dataLonga = fmtDateLong(data_contrato);
-  doc.text(`${FORO}, ${dataLonga}.`, pW / 2, y, { align: "center" });
-  y += 14;
+  doc.setFontSize(10);
+  const dataLonga = fmtDateLongLocal(data_contrato);
+  // Alinhado à direita de acordo com o padrão ou centro
+  doc.text(`MANAUS – AM, ${dataLonga}.`, pW - mR, y, { align: "right" });
+  y += 25;
 
   // Assinatura Mutuário
   const sigW = (cW - 20) / 2;
-  doc.setDrawColor(...GRAY);
+  doc.setDrawColor(...BLACK);
   doc.line(mL, y, mL + sigW, y);
-  doc.setFontSize(8.5);
-  doc.text(mutuaria_name || "—", mL + sigW / 2, y + 5, { align: "center" });
-  doc.text(`CNPJ: ${mutuaria_cnpj || "—"}`, mL + sigW / 2, y + 9, {
-    align: "center",
-  });
+  doc.setFontSize(9);
+  doc.text((mutuaria_name || "—").toUpperCase(), mL + sigW / 2, y + 5, { align: "center" });
+  doc.text(`CNPJ: ${mutuaria_cnpj || "—"}`, mL + sigW / 2, y + 9, { align: "center" });
   doc.setFont("helvetica", "bold");
   doc.text("CONTRATANTE MUTUÁRIO", mL + sigW / 2, y + 14, { align: "center" });
 
@@ -335,32 +296,19 @@ export const generateContractPDF = (contractData) => {
   doc.setFont("helvetica", "normal");
   doc.line(sigX2, y, sigX2 + sigW, y);
   doc.text("FIDELIZACRED", sigX2 + sigW / 2, y + 5, { align: "center" });
-  doc.text(`CNPJ: ${MUTUANTE.cnpj}`, sigX2 + sigW / 2, y + 9, {
-    align: "center",
-  });
+  doc.text(`CNPJ: ${MUTUANTE.cnpj}`, sigX2 + sigW / 2, y + 9, { align: "center" });
   doc.setFont("helvetica", "bold");
-  doc.text("CONTRATADA MUTUANTE", sigX2 + sigW / 2, y + 14, {
-    align: "center",
-  });
+  doc.text("CONTRATADA MUTUANTE", sigX2 + sigW / 2, y + 14, { align: "center" });
 
-  // ── QUADRO RESUMO — nova página
-  doc.addPage();
-  y = 15;
-
-  doc.setFillColor(...GREEN);
-  doc.rect(mL, y, cW, 8, "F");
-  doc.setTextColor(...WHITE);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.text("QUADRO RESUMO", pW / 2, y + 5.5, { align: "center" });
-  y += 14;
+  // ── QUADRO RESUMO (Mantido na folha final ou contínuo se houver espaço)
+  checkPage(80);
+  y += 25;
 
   // Identificação da Mutuante
-  doc.setTextColor(...DARK);
-  doc.setFontSize(9);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.text("Identificação da Mutuante:", mL, y);
-  y += 5;
+  y += 1;
 
   const mutuanteRows = [
     ["Razão Social", MUTUANTE.razaoSocial],
@@ -371,20 +319,19 @@ export const generateContractPDF = (contractData) => {
     startY: y,
     margin: { left: mL, right: mR },
     body: mutuanteRows,
-    styles: { fontSize: 8.5, cellPadding: 2 },
-    columnStyles: { 0: { fontStyle: "bold", cellWidth: 35 } },
+    styles: { fontSize: 9, cellPadding: 2, textColor: BLACK, lineColor: BLACK },
+    columnStyles: { 0: { fontStyle: "bold", cellWidth: 40 } },
     theme: "grid",
-    headStyles: { fillColor: GREEN },
   });
-  y = doc.lastAutoTable.finalY + 8;
+  y = doc.lastAutoTable.finalY + 5;
 
   // Identificação da Mutuária
   doc.setFont("helvetica", "bold");
   doc.text("Identificação da Mutuária:", mL, y);
-  y += 5;
+  y += 1;
 
   const mutuariaRows = [
-    ["Razão Social", mutuaria_name || "—"],
+    ["Razão Social", (mutuaria_name || "—").toUpperCase()],
     ["CNPJ", mutuaria_cnpj || "—"],
     ["Endereço", mutuaria_address || "—"],
   ];
@@ -392,21 +339,21 @@ export const generateContractPDF = (contractData) => {
     startY: y,
     margin: { left: mL, right: mR },
     body: mutuariaRows,
-    styles: { fontSize: 8.5, cellPadding: 2 },
-    columnStyles: { 0: { fontStyle: "bold", cellWidth: 35 } },
+    styles: { fontSize: 9, cellPadding: 2, textColor: BLACK, lineColor: BLACK },
+    columnStyles: { 0: { fontStyle: "bold", cellWidth: 40 } },
     theme: "grid",
   });
-  y = doc.lastAutoTable.finalY + 8;
+  y = doc.lastAutoTable.finalY + 5;
 
   // Dados da Operação
   doc.setFont("helvetica", "bold");
   doc.text("Dados da Operação:", mL, y);
-  y += 5;
+  y += 1;
 
   const operacaoRows = [
     ["Natureza da operação", "Empréstimo"],
     ["Valor total contratado", fmtNum(valor_contratado)],
-    ["Data do Contrato", fmtDateBR(data_contrato)],
+    ["Data do Contrato", fmtDateBRLocal(data_contrato)],
     ["Quantidade de Parcelas", String(qtde_parcelas || "—")],
     ["Taxa de Juros", `${taxa_juros || "—"}%`],
     ["Valor da Parcela", fmtNum(valor_parcela)],
@@ -416,7 +363,7 @@ export const generateContractPDF = (contractData) => {
     startY: y,
     margin: { left: mL, right: mR },
     body: operacaoRows,
-    styles: { fontSize: 8.5, cellPadding: 2 },
+    styles: { fontSize: 9, cellPadding: 2, textColor: BLACK, lineColor: BLACK },
     columnStyles: { 0: { fontStyle: "bold", cellWidth: 50 } },
     theme: "grid",
   });
@@ -425,11 +372,11 @@ export const generateContractPDF = (contractData) => {
   // Tabela de Vencimentos
   doc.setFont("helvetica", "bold");
   doc.text("Vencimento das Parcelas:", mL, y);
-  y += 5;
+  y += 1;
 
   const installments = buildInstallmentRows(contractData);
 
-  // Dividir em 2 colunas como no modelo
+  // Dividir em 2 colunas
   const half = Math.ceil(installments.length / 2);
   const col1 = installments.slice(0, half);
   const col2 = installments.slice(half);
@@ -439,12 +386,8 @@ export const generateContractPDF = (contractData) => {
     const r1 = col1[i];
     const r2 = col2[i] || { numero: "", data: "", valor: "" };
     tableBody.push([
-      r1.numero,
-      r1.data,
-      r1.valor,
-      r2.numero,
-      r2.data,
-      r2.valor,
+      r1.numero, r1.data, r1.valor,
+      r2.numero, r2.data, r2.valor,
     ]);
   }
 
@@ -453,26 +396,10 @@ export const generateContractPDF = (contractData) => {
     margin: { left: mL, right: mR },
     head: [["Parcela", "Data", "Valor", "Parcela", "Data", "Valor"]],
     body: tableBody,
-    styles: { fontSize: 8, cellPadding: 2, halign: "center" },
-    headStyles: { fillColor: GREEN, fontSize: 8.5, halign: "center" },
-    alternateRowStyles: { fillColor: [245, 255, 246] },
+    styles: { fontSize: 9, cellPadding: 2, halign: "center", textColor: BLACK, lineColor: BLACK },
+    headStyles: { fillColor: [240, 240, 240], textColor: BLACK, fontStyle: "bold" },
     theme: "grid",
   });
-
-  // ── Footer em todas as páginas
-  const pageCount = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    doc.setTextColor(...GRAY);
-    doc.text(
-      `FidelizaCred – ${MUTUANTE.cnpj} | Gerado em ${new Date().toLocaleString("pt-BR")} | Pg. ${i}/${pageCount}`,
-      pW / 2,
-      pH - 8,
-      { align: "center" },
-    );
-  }
 
   const safeName = (mutuaria_name || "contrato").replace(/[^a-zA-Z0-9]/g, "_");
   doc.save(
