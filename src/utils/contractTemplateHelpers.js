@@ -436,8 +436,10 @@ export const generateContractPDF = async (contractData) => {
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         
-        // Logo (no topo, centralizado) largura de 40mm, altura ajustável
-        doc.addImage(base64data, "JPEG", pW / 2 - 20, 10, 40, 16, undefined, "FAST");
+        // Logo (no topo, centralizado) apenas na primeira página
+        if (i === 1) {
+          doc.addImage(base64data, "JPEG", pW / 2 - 20, 10, 40, 16, undefined, "FAST");
+        }
 
         // Footer
         doc.setFont("helvetica", "normal");
