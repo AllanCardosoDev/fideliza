@@ -441,8 +441,7 @@ export const generateContractPDF = async (contractData) => {
   // ══════════════════════════════════════════════════════════════════════════════
   // PRÓXIMAS PÁGINAS: CLÁUSULAS
   // ══════════════════════════════════════════════════════════════════════════════
-
-  y = addPage();
+  addPage();
 
   const clausulas = buildClausulaTexts(contractData);
 
@@ -610,11 +609,9 @@ export const generateContractWord = async (contractData) => {
       fmtDateBRLocal(data_contrato),
     );
 
-    // O número 18 hardcoded no DOCX (Quantidade de parcelas) e a tabela de parcelas
-    // precisam ser ajustadas de forma inteligente. Não podemos usar um replace global de "18"
-    // pois isso quebra a contagem da tabela de parcelas (transformando a parcela 18 na parcela 10).
-    // Recomendado: o usuário deve editar o .docx e colocar a tag {QTDE_PARCELAS} no lugar do número 18 lá.
-
+    // O número 18 hardcoded no DOCX na parte de "Quantidade de parcelas" é o primeiro >18</w:t>.
+    // Trocamos APENAS o primeiro para evitar quebrar a parcela número 18 na tabela.
+    xmlContent = xmlContent.replace(/>18<\/w:t>/, `>${qtde_parcelas || "—"}</w:t>`);
     // Nomes antigos de mutuárias que podem estar no template
     xmlContent = xmlContent.replace(
       /ELAINE MEIRELES GUIMARAES OLIVEIRA VEREADOR/g,
