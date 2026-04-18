@@ -20,6 +20,25 @@ const FORO = "Manaus – AM";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+export const fmtDateBRLocal = (d) => {
+  if (!d) return "—";
+  const p = String(d).split("-");
+  return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : d;
+};
+
+export const fmtDateLongLocal = (d) => {
+  if (!d) return "—";
+  try {
+    return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  } catch (e) {
+    return d;
+  }
+};
+
 const fmtBRL = (v) =>
   Number(v || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -185,7 +204,7 @@ const buildClausulaTexts = (contractData) => {
 
 // ─── Gerador de PDF ───────────────────────────────────────────────────────────
 
-export const generateContractPDF = (contractData) => {
+export const generateContractPDF = async (contractData) => {
   const {
     protocol,
     mutuaria_name,
@@ -220,8 +239,9 @@ export const generateContractPDF = (contractData) => {
 
   // ── Cores: Somente Preto (Padrão MS Word)
   const BLACK = [0, 0, 0];
+  const GRAY = [100, 100, 100];
 
-  let y = 20;
+  let y = 35;
 
   // ── Título Centralizado
   doc.setTextColor(...BLACK);
@@ -246,7 +266,7 @@ export const generateContractPDF = (contractData) => {
 
   const addPage = () => {
     doc.addPage();
-    y = 20;
+    y = 35;
   };
 
   const checkPage = (needed = 10) => {
@@ -401,6 +421,40 @@ export const generateContractPDF = (contractData) => {
     theme: "grid",
   });
 
+  // ── Footer e Cabeçalho (com Logo) em todas as páginas
+  try {
+    const response = await fetch("/logo.jpeg");
+    if (response.ok) {
+      const blob = await response.blob();
+      const reader = new FileReader();
+      const base64data = await new Promise((res) => {
+        reader.onloadend = () => res(reader.result);
+        reader.readAsDataURL(blob);
+      });
+
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        
+        // Logo (no topo, centralizado) largura de 40mm, altura ajustável
+        doc.addImage(base64data, "JPEG", pW / 2 - 20, 10, 40, 16, undefined, "FAST");
+
+        // Footer
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(...GRAY);
+        doc.text(
+          `FIDELIZACRED – ${MUTUANTE.cnpj} | Gerado em ${new Date().toLocaleString("pt-BR")} | Pg. ${i}/${pageCount}`,
+          pW / 2,
+          pH - 10,
+          { align: "center" }
+        );
+      }
+    }
+  } catch (err) {
+    console.warn("Aviso: Logo não inserida. Retornando PDF sem logo.", err);
+  }
+
   const safeName = (mutuaria_name || "contrato").replace(/[^a-zA-Z0-9]/g, "_");
   doc.save(
     `${protocol ? protocol.replace(/\//g, "-") : "contrato"}_${safeName}.pdf`,
@@ -434,25 +488,6 @@ export const generateContractWord = async (contractData) => {
        valor_parcela = calcPMT(rC, nC, vC).toFixed(2);
     }
   }
-
-  const fmtDateBRLocal = (d) => {
-    if (!d) return "—";
-    const p = String(d).split("-");
-    return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : d;
-  };
-
-  const fmtDateLongLocal = (d) => {
-    if (!d) return "—";
-    try {
-      return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
-    } catch (e) {
-      return d;
-    }
-  };
 
   // Carregar template .docx do public/
   const response = await fetch("/contrato_template.docx");
