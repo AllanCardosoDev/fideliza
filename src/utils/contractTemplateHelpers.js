@@ -221,12 +221,18 @@ export const generateContractPDF = async (contractData) => {
   let valor_parcela = contractData.valor_parcela;
 
   // Auto-calculate valor_parcela if empty or zero
-  if (!valor_parcela || parseFloat(String(valor_parcela).replace(/\./g, "").replace(",", ".")) === 0) {
-    const vC = parseFloat(String(valor_contratado).replace(/\./g, "").replace(",", ".")) || 0;
+  if (
+    !valor_parcela ||
+    parseFloat(String(valor_parcela).replace(/\./g, "").replace(",", ".")) === 0
+  ) {
+    const vC =
+      parseFloat(
+        String(valor_contratado).replace(/\./g, "").replace(",", "."),
+      ) || 0;
     const rC = (parseFloat(taxa_juros) || 0) / 100;
     const nC = parseInt(qtde_parcelas) || 0;
     if (vC > 0 && rC > 0 && nC > 0) {
-       valor_parcela = calcPMT(rC, nC, vC).toFixed(2);
+      valor_parcela = calcPMT(rC, nC, vC).toFixed(2);
     }
   }
 
@@ -237,94 +243,49 @@ export const generateContractPDF = async (contractData) => {
   const mR = 20;
   const cW = pW - mL - mR;
 
-  // ── Cores: Somente Preto (Padrão MS Word)
   const BLACK = [0, 0, 0];
   const GRAY = [100, 100, 100];
 
-  let y = 35;
+  // Funções auxiliares
+  const addPage = () => {
+    doc.addPage();
+    return 20;
+  };
 
-  // ── Título Centralizado
+  let y = 32;
+
+  const checkPage = (needed = 10) => {
+    if (y + needed > pH - 20) {
+      y = addPage();
+    }
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // PÁGINA 1: QUADRO RESUMO (FOCO PRINCIPAL)
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  // Título
   doc.setTextColor(...BLACK);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text("INSTRUMENTO CONTRATUAL PARTICULAR DE MÚTUO FINANCEIRO", pW / 2, y, { align: "center" });
-  
+  doc.text("INSTRUMENTO CONTRATUAL PARTICULAR DE MÚTUO FINANCEIRO", pW / 2, y, {
+    align: "center",
+  });
+
   y += 7;
   doc.text(protocol || "—", pW / 2, y, { align: "center" });
 
-  // ── Intro
+  // Introdução
   y += 12;
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   const introText = `O presente contrato define as condições gerais aplicáveis ao Empréstimo, concedido por ${MUTUANTE.razaoSocial}, inscrita no CNPJ pelo número ${MUTUANTE.cnpj}, doravante denominada Mutuante, e ${(mutuaria_name || "—").toUpperCase()}, inscrita no CNPJ pelo número ${mutuaria_cnpj || "—"}, doravante denominado Mutuário, de acordo com a Lei Complementar nº 167 de 25/04/2018.`;
   const introLines = doc.splitTextToSize(introText, cW);
   doc.text(introLines, mL, y);
-  y += introLines.length * 5 + 4;
-
-  // ── Cláusulas
-  const clausulas = buildClausulaTexts(contractData);
-
-  const addPage = () => {
-    doc.addPage();
-    y = 35;
-  };
-
-  const checkPage = (needed = 10) => {
-    if (y + needed > pH - 20) addPage();
-  };
-
-  for (const clausula of clausulas) {
-    checkPage(16);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text(clausula.titulo, mL, y);
-    y += 5;
-
-    for (const item of clausula.itens) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      const lines = doc.splitTextToSize("   " + item, cW);
-      checkPage(lines.length * 5 + 2);
-      doc.text(lines, mL, y);
-      y += lines.length * 5 + 2;
-    }
-    y += 2;
-  }
-
-  // ── Data e Assinaturas
-  checkPage(50);
-  y += 5;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  const dataLonga = fmtDateLongLocal(data_contrato);
-  // Alinhado à direita de acordo com o padrão ou centro
-  doc.text(`MANAUS – AM, ${dataLonga}.`, pW - mR, y, { align: "right" });
-  y += 25;
-
-  // Assinatura Mutuário
-  const sigW = (cW - 20) / 2;
-  doc.setDrawColor(...BLACK);
-  doc.line(mL, y, mL + sigW, y);
-  doc.setFontSize(9);
-  doc.text((mutuaria_name || "—").toUpperCase(), mL + sigW / 2, y + 5, { align: "center" });
-  doc.text(`CNPJ: ${mutuaria_cnpj || "—"}`, mL + sigW / 2, y + 9, { align: "center" });
-  doc.setFont("helvetica", "bold");
-  doc.text("CONTRATANTE MUTUÁRIO", mL + sigW / 2, y + 14, { align: "center" });
-
-  // Assinatura Mutuante
-  const sigX2 = mL + sigW + 20;
-  doc.setFont("helvetica", "normal");
-  doc.line(sigX2, y, sigX2 + sigW, y);
-  doc.text("FIDELIZACRED", sigX2 + sigW / 2, y + 5, { align: "center" });
-  doc.text(`CNPJ: ${MUTUANTE.cnpj}`, sigX2 + sigW / 2, y + 9, { align: "center" });
-  doc.setFont("helvetica", "bold");
-  doc.text("CONTRATADA MUTUANTE", sigX2 + sigW / 2, y + 14, { align: "center" });
-
-  // ── QUADRO RESUMO (Mantido na folha final ou contínuo se houver espaço)
-  checkPage(80);
-  y += 25;
+  y += introLines.length * 5 + 8;
 
   // Identificação da Mutuante
+  checkPage(25);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.text("Identificação da Mutuante:", mL, y);
@@ -346,6 +307,7 @@ export const generateContractPDF = async (contractData) => {
   y = doc.lastAutoTable.finalY + 5;
 
   // Identificação da Mutuária
+  checkPage(25);
   doc.setFont("helvetica", "bold");
   doc.text("Identificação da Mutuária:", mL, y);
   y += 1;
@@ -366,6 +328,7 @@ export const generateContractPDF = async (contractData) => {
   y = doc.lastAutoTable.finalY + 5;
 
   // Dados da Operação
+  checkPage(40);
   doc.setFont("helvetica", "bold");
   doc.text("Dados da Operação:", mL, y);
   y += 1;
@@ -375,7 +338,7 @@ export const generateContractPDF = async (contractData) => {
     ["Valor total contratado", fmtNum(valor_contratado)],
     ["Data do Contrato", fmtDateBRLocal(data_contrato)],
     ["Quantidade de Parcelas", String(qtde_parcelas || "—")],
-    ["Taxa de Juros", `${taxa_juros || "—"}%`],
+    ["Taxas de Juros", `${taxa_juros || "—"}%`],
     ["Valor da Parcela", fmtNum(valor_parcela)],
     ["Alíquota IOF", fmtNum(aliquota_iof)],
   ];
@@ -387,11 +350,12 @@ export const generateContractPDF = async (contractData) => {
     columnStyles: { 0: { fontStyle: "bold", cellWidth: 50 } },
     theme: "grid",
   });
-  y = doc.lastAutoTable.finalY + 8;
+  y = doc.lastAutoTable.finalY + 6;
 
   // Tabela de Vencimentos
+  checkPage(50);
   doc.setFont("helvetica", "bold");
-  doc.text("Vencimento das Parcelas:", mL, y);
+  doc.text("Vencimento das parcelas:", mL, y);
   y += 1;
 
   const installments = buildInstallmentRows(contractData);
@@ -406,8 +370,12 @@ export const generateContractPDF = async (contractData) => {
     const r1 = col1[i];
     const r2 = col2[i] || { numero: "", data: "", valor: "" };
     tableBody.push([
-      r1.numero, r1.data, r1.valor,
-      r2.numero, r2.data, r2.valor,
+      r1.numero,
+      r1.data,
+      r1.valor,
+      r2.numero,
+      r2.data,
+      r2.valor,
     ]);
   }
 
@@ -416,12 +384,87 @@ export const generateContractPDF = async (contractData) => {
     margin: { left: mL, right: mR },
     head: [["Parcela", "Data", "Valor", "Parcela", "Data", "Valor"]],
     body: tableBody,
-    styles: { fontSize: 9, cellPadding: 2, halign: "center", textColor: BLACK, lineColor: BLACK },
-    headStyles: { fillColor: [240, 240, 240], textColor: BLACK, fontStyle: "bold" },
+    styles: {
+      fontSize: 8,
+      cellPadding: 2,
+      halign: "center",
+      textColor: BLACK,
+      lineColor: BLACK,
+    },
+    headStyles: {
+      fillColor: [240, 240, 240],
+      textColor: BLACK,
+      fontStyle: "bold",
+    },
     theme: "grid",
   });
 
-  // ── Footer e Cabeçalho (com Logo) em todas as páginas
+  y = doc.lastAutoTable.finalY + 20;
+
+  // Data e Assinaturas
+  checkPage(40);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  const dataLonga = fmtDateLongLocal(data_contrato);
+  doc.text(`MANAUS – AM, ${dataLonga}.`, pW - mR, y, { align: "right" });
+  y += 18;
+
+  // Assinatura Mutuário
+  const sigW = (cW - 20) / 2;
+  doc.setDrawColor(...BLACK);
+  doc.line(mL, y, mL + sigW, y);
+  doc.setFontSize(8);
+  doc.text(
+    (mutuaria_name || "—").toUpperCase() + " - CNPJ: " + (mutuaria_cnpj || "—"),
+    mL + sigW / 2,
+    y + 4,
+    { align: "center" },
+  );
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("CONTRATANTE MUTUÁRIO", mL + sigW / 2, y + 10, { align: "center" });
+
+  // Assinatura Mutuante
+  const sigX2 = mL + sigW + 20;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.line(sigX2, y, sigX2 + sigW, y);
+  doc.text("FIDELIZACRED – CNPJ: " + MUTUANTE.cnpj, sigX2 + sigW / 2, y + 4, {
+    align: "center",
+  });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("CONTRATADA MUTUANTE", sigX2 + sigW / 2, y + 10, {
+    align: "center",
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // PRÓXIMAS PÁGINAS: CLÁUSULAS
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  y = addPage();
+
+  const clausulas = buildClausulaTexts(contractData);
+
+  for (const clausula of clausulas) {
+    checkPage(16);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(clausula.titulo, mL, y);
+    y += 5;
+
+    for (const item of clausula.itens) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      const lines = doc.splitTextToSize("   " + item, cW);
+      checkPage(lines.length * 5 + 2);
+      doc.text(lines, mL, y);
+      y += lines.length * 5 + 2;
+    }
+    y += 2;
+  }
+
+  // ── Logo e Footer em todas as páginas
   try {
     const response = await fetch("/logo.jpeg");
     if (response.ok) {
@@ -435,13 +478,22 @@ export const generateContractPDF = async (contractData) => {
       const pageCount = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
-        
-        // Logo (no topo, centralizado) apenas na primeira página
+
+        // Logo apenas na primeira página
         if (i === 1) {
-          doc.addImage(base64data, "JPEG", pW / 2 - 20, 10, 40, 16, undefined, "FAST");
+          doc.addImage(
+            base64data,
+            "JPEG",
+            pW / 2 - 20,
+            10,
+            40,
+            16,
+            undefined,
+            "FAST",
+          );
         }
 
-        // Footer
+        // Footer em todas as páginas
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
         doc.setTextColor(...GRAY);
@@ -449,12 +501,12 @@ export const generateContractPDF = async (contractData) => {
           `FIDELIZACRED – ${MUTUANTE.cnpj} | Gerado em ${new Date().toLocaleString("pt-BR")} | Pg. ${i}/${pageCount}`,
           pW / 2,
           pH - 10,
-          { align: "center" }
+          { align: "center" },
         );
       }
     }
   } catch (err) {
-    console.warn("Aviso: Logo não inserida. Retornando PDF sem logo.", err);
+    console.warn("Aviso: Logo não inserida.", err);
   }
 
   const safeName = (mutuaria_name || "contrato").replace(/[^a-zA-Z0-9]/g, "_");
@@ -482,12 +534,18 @@ export const generateContractWord = async (contractData) => {
   let valor_parcela = contractData.valor_parcela;
 
   // Auto-calculate valor_parcela if empty or zero
-  if (!valor_parcela || parseFloat(String(valor_parcela).replace(/\./g, "").replace(",", ".")) === 0) {
-    const vC = parseFloat(String(valor_contratado).replace(/\./g, "").replace(",", ".")) || 0;
+  if (
+    !valor_parcela ||
+    parseFloat(String(valor_parcela).replace(/\./g, "").replace(",", ".")) === 0
+  ) {
+    const vC =
+      parseFloat(
+        String(valor_contratado).replace(/\./g, "").replace(",", "."),
+      ) || 0;
     const rC = (parseFloat(taxa_juros) || 0) / 100;
     const nC = parseInt(qtde_parcelas) || 0;
     if (vC > 0 && rC > 0 && nC > 0) {
-       valor_parcela = calcPMT(rC, nC, vC).toFixed(2);
+      valor_parcela = calcPMT(rC, nC, vC).toFixed(2);
     }
   }
 
@@ -510,10 +568,20 @@ export const generateContractWord = async (contractData) => {
     // PASSO 1: Desfragmentar tags {CAMPO} que o Word pode ter quebrado
     // Ex: {MU</w:t></w:r><w:r><w:t>TUARIA_NAME} → {MUTUARIA_NAME}
     const campos = [
-      "MUTUARIA_NAME", "MUTUARIA_CNPJ", "MUTUARIA_ADDRESS",
-      "VALOR_CONTRATADO", "DATA_CONTRATO", "DATA_CONTRATO_EXTENSO",
-      "QTDE_PARCELAS", "TAXA_JUROS", "VALOR_PARCELA", "ALIQUOTA_IOF",
-      "PROTOCOL", "START_DATE", "VALOR_TOTAL", "JUROS",
+      "MUTUARIA_NAME",
+      "MUTUARIA_CNPJ",
+      "MUTUARIA_ADDRESS",
+      "VALOR_CONTRATADO",
+      "DATA_CONTRATO",
+      "DATA_CONTRATO_EXTENSO",
+      "QTDE_PARCELAS",
+      "TAXA_JUROS",
+      "VALOR_PARCELA",
+      "ALIQUOTA_IOF",
+      "PROTOCOL",
+      "START_DATE",
+      "VALOR_TOTAL",
+      "JUROS",
     ];
     // Regex genérica: chave abre, letras intercaladas com tags XML opcionais, chave fecha
     campos.forEach((campo) => {
@@ -537,17 +605,30 @@ export const generateContractWord = async (contractData) => {
       fmtDateLongLocal(data_contrato).replace(" ", " "),
     );
     // Data curta 13.04.2026 (com tolerância)
-    xmlContent = xmlContent.replace(/13(?:\.|<[^>]*>)*04(?:\.|<[^>]*>)*2026/g, fmtDateBRLocal(data_contrato));
+    xmlContent = xmlContent.replace(
+      /13(?:\.|<[^>]*>)*04(?:\.|<[^>]*>)*2026/g,
+      fmtDateBRLocal(data_contrato),
+    );
 
-    // Quantidade de parcelas (18 hardcoded no template — sem tag)
-    // Cuidadoso: só trocar >18< se seguido de </w:t> (campo de texto, não layout)
-    xmlContent = xmlContent.replace(/>18<\/w:t>/g, `>${qtde_parcelas || "—"}</w:t>`);
+    // O número 18 hardcoded no DOCX (Quantidade de parcelas) e a tabela de parcelas
+    // precisam ser ajustadas de forma inteligente. Não podemos usar um replace global de "18"
+    // pois isso quebra a contagem da tabela de parcelas (transformando a parcela 18 na parcela 10).
+    // Recomendado: o usuário deve editar o .docx e colocar a tag {QTDE_PARCELAS} no lugar do número 18 lá.
 
     // Nomes antigos de mutuárias que podem estar no template
-    xmlContent = xmlContent.replace(/ELAINE MEIRELES GUIMARAES OLIVEIRA VEREADOR/g, (mutuaria_name || "—").toUpperCase());
-    xmlContent = xmlContent.replace(/SAMIA ZANIS DE SOUZA/g, (mutuaria_name || "—").toUpperCase());
+    xmlContent = xmlContent.replace(
+      /ELAINE MEIRELES GUIMARAES OLIVEIRA VEREADOR/g,
+      (mutuaria_name || "—").toUpperCase(),
+    );
+    xmlContent = xmlContent.replace(
+      /SAMIA ZANIS DE SOUZA/g,
+      (mutuaria_name || "—").toUpperCase(),
+    );
     xmlContent = xmlContent.replace(/25380152000198/g, mutuaria_cnpj || "—");
-    xmlContent = xmlContent.replace(/39\.770\.347\/0001-59/g, mutuaria_cnpj || "—");
+    xmlContent = xmlContent.replace(
+      /39\.770\.347\/0001-59/g,
+      mutuaria_cnpj || "—",
+    );
     xmlContent = xmlContent.replace(
       /Travessa Lapa[^<]*/g,
       mutuaria_address || "—",
@@ -602,13 +683,52 @@ export const generateContractWord = async (contractData) => {
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   });
 
-  const url = URL.createObjectURL(out);
-  const a = document.createElement("a");
-  a.href = url;
+  // ─── ENVIAR PARA SERVIDOR PARA CONVERTER PARA PDF ───
   const safeName = (mutuaria_name || "contrato").replace(/[^a-zA-Z0-9]/g, "_");
-  a.download = `${protocol ? protocol.replace(/\//g, "-") : "contrato"}_${safeName}.docx`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const docxFileName = `${protocol ? protocol.replace(/\//g, "-") : "contrato"}_${safeName}.docx`;
+
+  try {
+    const formData = new FormData();
+    formData.append("docx", out, docxFileName);
+
+    console.log("📄 Enviando DOCX para conversão para PDF...");
+    const convertResponse = await fetch("/api/convert-docx-pdf", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!convertResponse.ok) {
+      throw new Error(`Erro na conversão: ${convertResponse.statusText}`);
+    }
+
+    // Receber PDF e fazer download
+    const pdfBlob = await convertResponse.blob();
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    const pdfFileName = docxFileName.replace(".docx", ".pdf");
+
+    const a = document.createElement("a");
+    a.href = pdfUrl;
+    a.download = pdfFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(pdfUrl);
+
+    console.log(`✅ PDF gerado e baixado: ${pdfFileName}`);
+  } catch (err) {
+    console.warn(
+      "⚠️ Erro ao converter para PDF via servidor, fazendo download do DOCX em vez disso:",
+      err.message,
+    );
+
+    // Fallback: Download DOCX se conversão falhar
+    const url = URL.createObjectURL(out);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = docxFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 };
