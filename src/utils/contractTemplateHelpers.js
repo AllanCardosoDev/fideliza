@@ -6,6 +6,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
+import { calcPMT } from "./helpers";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -193,11 +194,22 @@ export const generateContractPDF = (contractData) => {
     valor_contratado,
     taxa_juros,
     qtde_parcelas,
-    valor_parcela,
     aliquota_iof,
     data_contrato,
     start_date,
   } = contractData;
+
+  let valor_parcela = contractData.valor_parcela;
+
+  // Auto-calculate valor_parcela if empty or zero
+  if (!valor_parcela || parseFloat(String(valor_parcela).replace(/\./g, "").replace(",", ".")) === 0) {
+    const vC = parseFloat(String(valor_contratado).replace(/\./g, "").replace(",", ".")) || 0;
+    const rC = (parseFloat(taxa_juros) || 0) / 100;
+    const nC = parseInt(qtde_parcelas) || 0;
+    if (vC > 0 && rC > 0 && nC > 0) {
+       valor_parcela = calcPMT(rC, nC, vC).toFixed(2);
+    }
+  }
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pW = doc.internal.pageSize.getWidth();
@@ -479,11 +491,22 @@ export const generateContractWord = async (contractData) => {
     valor_contratado,
     taxa_juros,
     qtde_parcelas,
-    valor_parcela,
     aliquota_iof,
     data_contrato,
     start_date,
   } = contractData;
+
+  let valor_parcela = contractData.valor_parcela;
+
+  // Auto-calculate valor_parcela if empty or zero
+  if (!valor_parcela || parseFloat(String(valor_parcela).replace(/\./g, "").replace(",", ".")) === 0) {
+    const vC = parseFloat(String(valor_contratado).replace(/\./g, "").replace(",", ".")) || 0;
+    const rC = (parseFloat(taxa_juros) || 0) / 100;
+    const nC = parseInt(qtde_parcelas) || 0;
+    if (vC > 0 && rC > 0 && nC > 0) {
+       valor_parcela = calcPMT(rC, nC, vC).toFixed(2);
+    }
+  }
 
   const fmtDateBRLocal = (d) => {
     if (!d) return "—";
@@ -544,13 +567,13 @@ export const generateContractWord = async (contractData) => {
     // Protocolo no cabeçalho
     xmlContent = xmlContent.replace(/04\.13\/0016\/2026/g, protocol || "—");
 
-    // Data por extenso ("13 de Abril de 2026" ou similar)
+    // Data por extenso ("13 de Abril de 2026" ou similar com tolerância a tags xml)
     xmlContent = xmlContent.replace(
-      /\d{1,2} de [A-Za-zç]+ de \d{4}/g,
-      fmtDateLongLocal(data_contrato),
+      /13(?:<[^>]*>|\s)*de(?:<[^>]*>|\s)*[Aa]bril(?:<[^>]*>|\s)*de(?:<[^>]*>|\s)*2026/g,
+      fmtDateLongLocal(data_contrato).replace(" ", " "),
     );
-    // Data curta 13.04.2026
-    xmlContent = xmlContent.replace(/13\.04\.2026/g, fmtDateBRLocal(data_contrato));
+    // Data curta 13.04.2026 (com tolerância)
+    xmlContent = xmlContent.replace(/13(?:\.|<[^>]*>)*04(?:\.|<[^>]*>)*2026/g, fmtDateBRLocal(data_contrato));
 
     // Quantidade de parcelas (18 hardcoded no template — sem tag)
     // Cuidadoso: só trocar >18< se seguido de </w:t> (campo de texto, não layout)
