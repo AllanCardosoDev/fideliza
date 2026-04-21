@@ -202,7 +202,7 @@ const buildClausulaTexts = (contractData) => {
   ];
 };
 
-// ─── Gerador de PDF ───────────────────────────────────────────────────────────
+// ─── Gerador de PDF (usa o template contratop.pdf com pdf-lib) ──────────────
 
 export const generateContractPDF = async (contractData) => {
   const {
@@ -220,303 +220,249 @@ export const generateContractPDF = async (contractData) => {
 
   let valor_parcela = contractData.valor_parcela;
 
-  // Auto-calculate valor_parcela if empty or zero
-  if (
-    !valor_parcela ||
-    parseFloat(String(valor_parcela).replace(/\./g, "").replace(",", ".")) === 0
-  ) {
+  // Parse valor_parcela para detectar se é inválido
+  const parsedVP = valor_parcela
+    ? parseFloat(String(valor_parcela).replace(/\./g, "").replace(",", "."))
+    : 0;
+
+  // Auto-calculate valor_parcela if empty, zero, or NaN
+  if (!valor_parcela || !parsedVP || isNaN(parsedVP) || parsedVP <= 0) {
     const vC =
       parseFloat(
         String(valor_contratado).replace(/\./g, "").replace(",", "."),
       ) || 0;
     const rC = (parseFloat(taxa_juros) || 0) / 100;
     const nC = parseInt(qtde_parcelas) || 0;
+    console.log("   PMT inputs: principal=", vC, "rate=", rC, "n=", nC);
     if (vC > 0 && rC > 0 && nC > 0) {
-      valor_parcela = calcPMT(rC, nC, vC).toFixed(2);
+      valor_parcela = calcPMT(vC, rC, nC).toFixed(2);
+    } else if (vC > 0 && nC > 0) {
+      // Se não tem juros, divide simples
+      valor_parcela = (vC / nC).toFixed(2);
     }
   }
 
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const pW = doc.internal.pageSize.getWidth();
-  const pH = doc.internal.pageSize.getHeight();
-  const mL = 20;
-  const mR = 20;
-  const cW = pW - mL - mR;
+  console.log("📄 Carregando template contratop.pdf...");
+  console.log("   valor_parcela final:", valor_parcela);
 
-  const BLACK = [0, 0, 0];
-  const GRAY = [100, 100, 100];
+  const { PDFDocument, rgb, StandardFonts } = await import("pdf-lib");
 
-  // Funções auxiliares
-  const addPage = () => {
-    doc.addPage();
-    return 20;
+  const templateResponse = await fetch("/contratop.pdf");
+  if (!templateResponse.ok) {
+    throw new Error("Template contratop.pdf não encontrado em /contratop.pdf");
+  }
+  const templateBytes = await templateResponse.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(templateBytes);
+
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const pages = pdfDoc.getPages();
+  const page1 = pages[0];
+  const page3 = pages.length > 2 ? pages[2] : null;
+
+  const W = rgb(1, 1, 1); // branco
+  const K = rgb(0, 0, 0); // preto
+
+  // Função utilitária: primeiro apaga TODA a área com retângulo branco,
+  // depois escreve o texto novo. O retângulo deve ser generoso para garantir
+  // que nenhum fragmento do texto original do template fique visível.
+  const whiteOut = (pg, rx, ry, rw, rh) => {
+    pg.drawRectangle({ x: rx, y: ry, width: rw, height: rh, color: W });
   };
 
-  let y = 32;
-
-  const checkPage = (needed = 10) => {
-    if (y + needed > pH - 20) {
-      y = addPage();
-    }
+  const writeText = (pg, text, tx, ty, opts = {}) => {
+    const sz = opts.size || 9;
+    const f = opts.bold ? fontBold : font;
+    pg.drawText(String(text ?? "—"), { x: tx, y: ty, size: sz, font: f, color: K });
   };
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // PÁGINA 1: QUADRO RESUMO (FOCO PRINCIPAL)
+  // PÁGINA 1: Protocolo + Bloco de dados do cliente no parágrafo introdutório
+  //
+  // ESTRATÉGIA: O template PDF original contém dados de outro cliente
+  // (nome, CNPJ, endereço, data). Em vez de cobrir campo a campo, cobrimos
+  // TODO o bloco de linhas onde esses dados aparecem no parágrafo introdutório
+  // e reescrevemos o trecho completo — incluindo frases de ligação — para
+  // que não reste nenhum fragmento do texto antigo.
   // ══════════════════════════════════════════════════════════════════════════════
 
-  // Título
-  doc.setTextColor(...BLACK);
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.text("INSTRUMENTO CONTRATUAL PARTICULAR DE MÚTUO FINANCEIRO", pW / 2, y, {
-    align: "center",
-  });
+  const { width: pageWidth } = page1.getSize();
+  const ML = 62;                                    // margem esquerda
+  const CW = Math.min(pageWidth - ML - 30, 490);   // largura de conteúdo
 
-  y += 7;
-  doc.text(protocol || "—", pW / 2, y, { align: "center" });
+  const name  = (mutuaria_name || "—").toUpperCase();
+  const cnpj  = mutuaria_cnpj || "—";
+  const addr  = mutuaria_address || "—";
 
-  // Introdução
-  y += 12;
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  const introText = `O presente contrato define as condições gerais aplicáveis ao Empréstimo, concedido por ${MUTUANTE.razaoSocial}, inscrita no CNPJ pelo número ${MUTUANTE.cnpj}, doravante denominada Mutuante, e ${(mutuaria_name || "—").toUpperCase()}, inscrita no CNPJ pelo número ${mutuaria_cnpj || "—"}, doravante denominado Mutuário, de acordo com a Lei Complementar nº 167 de 25/04/2018.`;
-  const introLines = doc.splitTextToSize(introText, cW);
-  doc.text(introLines, mL, y);
-  y += introLines.length * 5 + 8;
+  // ── Protocolo ──
+  whiteOut(page1, 185, 686, 370, 28);
+  writeText(page1, protocol || "—", 259, 698, { size: 10, bold: true });
 
-  // Identificação da Mutuante
-  checkPage(25);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.text("Identificação da Mutuante:", mL, y);
-  y += 1;
+  // ── Bloco do cliente no parágrafo introdutório ──
+  // O template original contém ~4 linhas com: nome antigo (possivelmente
+  // longo, quebrando em 2 linhas), CNPJ antigo, endereço antigo e texto
+  // de ligação ("inscrita no CNPJ/CPF sob o nº ..., com sede na ...,
+  // doravante denominada CONTRATANTE MUTUÁRIA, celebram ...").
+  // Cobrimos tudo de uma vez (y:593 → y:650 = 57pt, ~5 linhas de texto)
+  // e reescrevemos com os dados do novo cliente.
+  whiteOut(page1, ML, 593, CW, 57);
 
-  const mutuanteRows = [
-    ["Razão Social", MUTUANTE.razaoSocial],
-    ["CNPJ", MUTUANTE.cnpj],
-    ["Endereço", MUTUANTE.endereco],
-  ];
-  autoTable(doc, {
-    startY: y,
-    margin: { left: mL, right: mR },
-    body: mutuanteRows,
-    styles: { fontSize: 9, cellPadding: 2, textColor: BLACK, lineColor: BLACK },
-    columnStyles: { 0: { fontStyle: "bold", cellWidth: 40 } },
-    theme: "grid",
-  });
-  y = doc.lastAutoTable.finalY + 5;
-
-  // Identificação da Mutuária
-  checkPage(25);
-  doc.setFont("helvetica", "bold");
-  doc.text("Identificação da Mutuária:", mL, y);
-  y += 1;
-
-  const mutuariaRows = [
-    ["Razão Social", (mutuaria_name || "—").toUpperCase()],
-    ["CNPJ", mutuaria_cnpj || "—"],
-    ["Endereço", mutuaria_address || "—"],
-  ];
-  autoTable(doc, {
-    startY: y,
-    margin: { left: mL, right: mR },
-    body: mutuariaRows,
-    styles: { fontSize: 9, cellPadding: 2, textColor: BLACK, lineColor: BLACK },
-    columnStyles: { 0: { fontStyle: "bold", cellWidth: 40 } },
-    theme: "grid",
-  });
-  y = doc.lastAutoTable.finalY + 5;
-
-  // Dados da Operação
-  checkPage(40);
-  doc.setFont("helvetica", "bold");
-  doc.text("Dados da Operação:", mL, y);
-  y += 1;
-
-  const operacaoRows = [
-    ["Natureza da operação", "Empréstimo"],
-    ["Valor total contratado", fmtNum(valor_contratado)],
-    ["Data do Contrato", fmtDateBRLocal(data_contrato)],
-    ["Quantidade de Parcelas", String(qtde_parcelas || "—")],
-    ["Taxas de Juros", `${taxa_juros || "—"}%`],
-    ["Valor da Parcela", fmtNum(valor_parcela)],
-    ["Alíquota IOF", fmtNum(aliquota_iof)],
-  ];
-  autoTable(doc, {
-    startY: y,
-    margin: { left: mL, right: mR },
-    body: operacaoRows,
-    styles: { fontSize: 9, cellPadding: 2, textColor: BLACK, lineColor: BLACK },
-    columnStyles: { 0: { fontStyle: "bold", cellWidth: 50 } },
-    theme: "grid",
-  });
-  y = doc.lastAutoTable.finalY + 6;
-
-  // Tabela de Vencimentos
-  checkPage(50);
-  doc.setFont("helvetica", "bold");
-  doc.text("Vencimento das parcelas:", mL, y);
-  y += 1;
-
-  const installments = buildInstallmentRows({ ...contractData, valor_parcela });
-
-  // Dividir em 2 colunas
-  const half = Math.ceil(installments.length / 2);
-  const col1 = installments.slice(0, half);
-  const col2 = installments.slice(half);
-
-  const tableBody = [];
-  for (let i = 0; i < half; i++) {
-    const r1 = col1[i];
-    const r2 = col2[i] || { numero: "", data: "", valor: "" };
-    tableBody.push([
-      r1.numero,
-      r1.data,
-      r1.valor,
-      r2.numero,
-      r2.data,
-      r2.valor,
-    ]);
-  }
-
-  autoTable(doc, {
-    startY: y,
-    margin: { left: mL, right: mR },
-    head: [["Parcela", "Data", "Valor", "Parcela", "Data", "Valor"]],
-    body: tableBody,
-    styles: {
-      fontSize: 8,
-      cellPadding: 2,
-      halign: "center",
-      textColor: BLACK,
-      lineColor: BLACK,
-    },
-    headStyles: {
-      fillColor: [240, 240, 240],
-      textColor: BLACK,
-      fontStyle: "bold",
-    },
-    theme: "grid",
-  });
-
-  y = doc.lastAutoTable.finalY + 20;
-
-  // Data e Assinaturas
-  checkPage(40);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  const dataLonga = fmtDateLongLocal(data_contrato);
-  doc.text(`MANAUS – AM, ${dataLonga}.`, pW - mR, y, { align: "right" });
-  y += 18;
-
-  // Assinatura Mutuário
-  const sigW = (cW - 20) / 2;
-  doc.setDrawColor(...BLACK);
-  doc.line(mL, y, mL + sigW, y);
-  doc.setFontSize(8);
-  doc.text(
-    (mutuaria_name || "—").toUpperCase() + " - CNPJ: " + (mutuaria_cnpj || "—"),
-    mL + sigW / 2,
-    y + 4,
-    { align: "center" },
-  );
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.text("CONTRATANTE MUTUÁRIO", mL + sigW / 2, y + 10, { align: "center" });
-
-  // Assinatura Mutuante
-  const sigX2 = mL + sigW + 20;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.line(sigX2, y, sigX2 + sigW, y);
-  doc.text("FIDELIZACRED – CNPJ: " + MUTUANTE.cnpj, sigX2 + sigW / 2, y + 4, {
-    align: "center",
-  });
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.text("CONTRATADA MUTUANTE", sigX2 + sigW / 2, y + 10, {
-    align: "center",
-  });
+  writeText(page1, `${name}, inscrita no CNPJ/CPF`, ML + 4, 641, { size: 9 });
+  writeText(page1, `sob o nº ${cnpj}, com sede na`, ML + 4, 629, { size: 9 });
+  writeText(page1, `${addr}, doravante denominada CONTRATANTE`, ML + 4, 617, { size: 9 });
+  writeText(page1, `MUTUÁRIA, celebram o presente contrato nos termos das cláusulas abaixo:`, ML + 4, 605, { size: 9 });
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // PRÓXIMAS PÁGINAS: CLÁUSULAS
+  // PÁGINA 3: Assinaturas + Quadro Resumo + Parcelas
   // ══════════════════════════════════════════════════════════════════════════════
-  addPage();
 
-  const clausulas = buildClausulaTexts(contractData);
+  if (page3) {
+    const dataLonga = fmtDateLongLocal(data_contrato);
 
-  for (const clausula of clausulas) {
-    checkPage(16);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text(clausula.titulo, mL, y);
-    y += 5;
+    // ── Data por extenso ──
+    whiteOut(page3, ML, 716, CW, 28);
+    writeText(page3, `MANAUS – AM, ${dataLonga}.`, 310, 727, { size: 10 });
 
-    for (const item of clausula.itens) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      const lines = doc.splitTextToSize("   " + item, cW);
-      checkPage(lines.length * 5 + 2);
-      doc.text(lines, mL, y);
-      y += lines.length * 5 + 2;
+    // ── Assinatura Mutuário: nome + CNPJ + rótulo ──
+    // Cobrir a área inteira incluindo o rótulo "CONTRATANTE MUTUÁRIO" abaixo
+    whiteOut(page3, ML, 664, CW, 38);
+    writeText(page3,
+      `${name} - CNPJ: ${cnpj}`,
+      71, 690,
+      { size: 10 }
+    );
+    writeText(page3, "CONTRATANTE MUTUÁRIO", 71, 675, { size: 9, bold: true });
+
+    // ── Identificação da Mutuária (Quadro Resumo) ──
+
+    // Razão Social
+    whiteOut(page3, 152, 504, 398, 26);
+    writeText(page3, name, 162, 516);
+
+    // CNPJ
+    whiteOut(page3, 152, 491, 398, 26);
+    writeText(page3, cnpj, 162, 503);
+
+    // Endereço
+    whiteOut(page3, 152, 478, 398, 26);
+    writeText(page3, addr, 162, 491);
+
+    // ── Dados da Operação ──
+    // Cada campo: retângulo 24px de altura, começando 10pt abaixo da baseline
+    const opFields = [
+      { baseline: 453, value: fmtNum(valor_contratado) },
+      { baseline: 440, value: fmtDateBRLocal(data_contrato) },
+      { baseline: 427, value: String(qtde_parcelas || "—") },
+      { baseline: 414, value: `${taxa_juros || "—"}%` },
+      { baseline: 401, value: fmtNum(valor_parcela) },
+      { baseline: 388, value: fmtNum(aliquota_iof) },
+    ];
+    for (const f of opFields) {
+      whiteOut(page3, 208, f.baseline - 10, 342, 24);
+      writeText(page3, f.value, 218, f.baseline);
     }
-    y += 2;
-  }
 
-  // ── Logo e Footer em todas as páginas
-  try {
-    const response = await fetch("/logo.jpeg");
-    if (response.ok) {
-      const blob = await response.blob();
-      const reader = new FileReader();
-      const base64data = await new Promise((res) => {
-        reader.onloadend = () => res(reader.result);
-        reader.readAsDataURL(blob);
-      });
+    // ── Tabela de Parcelas ──
+    // Cobrir TODA a área da tabela — INCLUSIVE o header original do template
+    // para evitar cabeçalho duplicado.
 
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
+    const installments = buildInstallmentRows({ ...contractData, valor_parcela });
+    const half = Math.ceil(installments.length / 2);
 
-        // Logo apenas na primeira página
-        if (i === 1) {
-          doc.addImage(
-            base64data,
-            "JPEG",
-            pW / 2 - 20,
-            10,
-            40,
-            16,
-            undefined,
-            "FAST",
-          );
-        }
+    // Cobrir: do topo da tabela (y≈370, acima do header original)
+    // até bem abaixo da última linha de dados
+    const maxRows = Math.max(half, 9);
+    const covTop = 370;
+    const covBot = 340 - (maxRows * 12) - 15;
+    whiteOut(page3, 68, covBot, 460, covTop - covBot);
 
-        // Footer em todas as páginas
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
-        doc.setTextColor(...GRAY);
-        doc.text(
-          `FIDELIZACRED – ${MUTUANTE.cnpj} | Gerado em ${new Date().toLocaleString("pt-BR")} | Pg. ${i}/${pageCount}`,
-          pW / 2,
-          pH - 10,
-          { align: "center" },
-        );
+    // Redesenhar header da tabela
+    const headerY = 356;
+    writeText(page3, "Parcela", 77, headerY, { size: 8, bold: true });
+    writeText(page3, "Data", 130, headerY, { size: 8, bold: true });
+    writeText(page3, "Valor (R$)", 218, headerY, { size: 8, bold: true });
+    writeText(page3, "Parcela", 310, headerY, { size: 8, bold: true });
+    writeText(page3, "Data", 364, headerY, { size: 8, bold: true });
+    writeText(page3, "Valor (R$)", 452, headerY, { size: 8, bold: true });
+
+    // Coordenadas das colunas de dados
+    const c = {
+      n1: 77,  d1: 130, v1: 218,
+      n2: 310, d2: 364, v2: 452,
+    };
+
+    const startY = 341;
+    const rH = 12;
+
+    for (let i = 0; i < half; i++) {
+      const y = startY - (i * rH);
+      const L = installments[i];
+      const R = installments[i + half];
+
+      page3.drawText(L.numero, { x: c.n1, y, size: 9, font, color: K });
+      page3.drawText(L.data,   { x: c.d1, y, size: 9, font, color: K });
+      page3.drawText(L.valor,  { x: c.v1, y, size: 9, font, color: K });
+
+      if (R) {
+        page3.drawText(R.numero, { x: c.n2, y, size: 9, font, color: K });
+        page3.drawText(R.data,   { x: c.d2, y, size: 9, font, color: K });
+        page3.drawText(R.valor,  { x: c.v2, y, size: 9, font, color: K });
       }
     }
-  } catch (err) {
-    console.warn("Aviso: Logo não inserida.", err);
+
+    // Grade da tabela
+    const gK = rgb(0.4, 0.4, 0.4);
+    const gTop = headerY + 10;
+    const gBot = startY - ((half - 1) * rH) - 4;
+
+    // Horizontais
+    page3.drawLine({
+      start: { x: 74, y: gTop }, end: { x: 522, y: gTop },
+      thickness: 0.5, color: gK,
+    });
+    page3.drawLine({
+      start: { x: 74, y: headerY - 4 }, end: { x: 522, y: headerY - 4 },
+      thickness: 0.5, color: gK,
+    });
+    for (let i = 0; i <= half; i++) {
+      const ly = startY - (i * rH) + 10;
+      page3.drawLine({
+        start: { x: 74, y: ly }, end: { x: 522, y: ly },
+        thickness: 0.5, color: gK,
+      });
+    }
+    // Verticais
+    for (const vx of [74, 122, 212, 302, 354, 446, 522]) {
+      page3.drawLine({
+        start: { x: vx, y: gTop }, end: { x: vx, y: gBot },
+        thickness: 0.5, color: gK,
+      });
+    }
   }
 
+  // ── Salvar e fazer download ──
+  const pdfBytes = await pdfDoc.save();
+  const blob = new Blob([pdfBytes], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+
   const safeName = (mutuaria_name || "contrato").replace(/[^a-zA-Z0-9]/g, "_");
-  doc.save(
-    `${protocol ? protocol.replace(/\//g, "-") : "contrato"}_${safeName}.pdf`,
-  );
+  const fileName = `${protocol ? protocol.replace(/\//g, "-") : "contrato"}_${safeName}.pdf`;
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  console.log(`✅ PDF gerado a partir do template contratop.pdf: ${fileName}`);
 };
 
-// ─── Gerador de Word via template original (.docx) ──────────────────────────
+// ─── Gerador de DOCX Blob (lógica compartilhada PDF ↔ Word) ─────────────────
 
-export const generateContractWord = async (contractData) => {
+const generateContractDocxBlob = async (contractData) => {
   const {
     protocol,
     mutuaria_name,
@@ -544,7 +490,7 @@ export const generateContractWord = async (contractData) => {
     const rC = (parseFloat(taxa_juros) || 0) / 100;
     const nC = parseInt(qtde_parcelas) || 0;
     if (vC > 0 && rC > 0 && nC > 0) {
-      valor_parcela = calcPMT(rC, nC, vC).toFixed(2);
+      valor_parcela = calcPMT(vC, rC, nC).toFixed(2);
     }
   }
 
@@ -565,7 +511,6 @@ export const generateContractWord = async (contractData) => {
     let xmlContent = zip.file(xmlPath).asText();
 
     // PASSO 1: Desfragmentar tags {CAMPO} que o Word pode ter quebrado
-    // Ex: {MU</w:t></w:r><w:r><w:t>TUARIA_NAME} → {MUTUARIA_NAME}
     const campos = [
       "MUTUARIA_NAME",
       "MUTUARIA_CNPJ",
@@ -582,12 +527,11 @@ export const generateContractWord = async (contractData) => {
       "VALOR_TOTAL",
       "JUROS",
     ];
-    // Regex genérica: chave abre, letras intercaladas com tags XML opcionais, chave fecha
     campos.forEach((campo) => {
       const chars = campo.split("");
       let pat = "\\{";
       for (let i = 0; i < chars.length; i++) {
-        if (i > 0) pat += "(?:<[^>]*>)*"; // tags XML opcionais entre letras
+        if (i > 0) pat += "(?:<[^>]*>)*";
         pat += chars[i];
       }
       pat += "(?:<[^>]*>)*\\}";
@@ -595,24 +539,18 @@ export const generateContractWord = async (contractData) => {
     });
 
     // PASSO 2: Substituir textos hardcoded do template
-    // Protocolo no cabeçalho
     xmlContent = xmlContent.replace(/04\.13\/0016\/2026/g, protocol || "—");
 
-    // Data por extenso ("13 de Abril de 2026" ou similar com tolerância a tags xml)
     xmlContent = xmlContent.replace(
       /13(?:<[^>]*>|\s)*de(?:<[^>]*>|\s)*[Aa]bril(?:<[^>]*>|\s)*de(?:<[^>]*>|\s)*2026/g,
       fmtDateLongLocal(data_contrato).replace(" ", " "),
     );
-    // Data curta 13.04.2026 (com tolerância)
     xmlContent = xmlContent.replace(
-      /13(?:\.|<[^>]*>)*04(?:\.|<[^>]*>)*2026/g,
+      /13(?:\.|\<[^>]*\>)*04(?:\.|\<[^>]*\>)*2026/g,
       fmtDateBRLocal(data_contrato),
     );
 
-    // O número 18 hardcoded no DOCX na parte de "Quantidade de parcelas" é o primeiro >18</w:t>.
-    // Trocamos APENAS o primeiro para evitar quebrar a parcela número 18 na tabela.
     xmlContent = xmlContent.replace(/>18<\/w:t>/, `>${qtde_parcelas || "—"}</w:t>`);
-    // Nomes antigos de mutuárias que podem estar no template
     xmlContent = xmlContent.replace(
       /ELAINE MEIRELES GUIMARAES OLIVEIRA VEREADOR/g,
       (mutuaria_name || "—").toUpperCase(),
@@ -635,15 +573,11 @@ export const generateContractWord = async (contractData) => {
     xmlContent = xmlContent.replace(/w:val="EE0000"/g, 'w:val="000000"');
 
     // PASSO 4: Reconstruir a tabela de parcelas dinamicamente
-    // A tabela de parcelas é a 4ª <w:tbl> (índice 3) no XML.
-    // Tem 6 colunas: [Parcela, Data, Valor] x 2 (esquerda e direita).
-    // Precisamos remover todas as linhas de dados e recriá-las com base nos dados reais.
     try {
       const xmlDoc = new DOMParser().parseFromString(xmlContent, "text/xml");
       const xmlSerializer = new XMLSerializer();
       const allTables = xmlDoc.getElementsByTagName("w:tbl");
 
-      // Localizar a tabela de parcelas pelo conteúdo "Parcela" + "Data" + "Valor"
       let installmentTable = null;
       for (let t = 0; t < allTables.length; t++) {
         const txt = allTables[t].textContent;
@@ -655,30 +589,23 @@ export const generateContractWord = async (contractData) => {
 
       if (installmentTable) {
         const tblRows = installmentTable.getElementsByTagName("w:tr");
-        // Guardar a linha de cabeçalho (row 0) e a primeira linha de dados (row 1) como template
         const headerRow = tblRows[0];
-        const templateRow = tblRows[1]; // row com 6 células preenchidas
+        const templateRow = tblRows[1];
 
-        // Construir as parcelas dinâmicas
         const installments = buildInstallmentRows({ ...contractData, valor_parcela });
         const half = Math.ceil(installments.length / 2);
 
-        // Função helper: criar uma célula XML com texto
         const makeCell = (templateCell, text, widthDxa) => {
           const cell = templateCell.cloneNode(true);
-          // Substituir largura da célula
           const tcW = cell.getElementsByTagName("w:tcW")[0];
           if (tcW && widthDxa) tcW.setAttribute("w:w", String(widthDxa));
-          // Substituir o texto em <w:t>
           const wts = cell.getElementsByTagName("w:t");
           if (wts.length > 0) {
             wts[0].textContent = text;
-            // Remover w:t extras (caso haja fragmentação)
             while (wts.length > 1) {
               wts[1].parentNode.removeChild(wts[1]);
             }
           }
-          // Gerar IDs únicos para evitar conflitos
           const paras = cell.getElementsByTagName("w:p");
           for (let p = 0; p < paras.length; p++) {
             if (paras[p].getAttributeNS) {
@@ -689,49 +616,37 @@ export const generateContractWord = async (contractData) => {
           return cell;
         };
 
-        // Capturar as 6 células template da row 1
         const templateCells = templateRow.getElementsByTagName("w:tc");
         const cellTemplates = [];
         for (let c = 0; c < 6; c++) {
           cellTemplates.push(templateCells[c]);
         }
 
-        // Larguras das colunas originais
         const widths = [988, 1842, 1843, 996, 1843, 1843];
 
-        // Remover todas as linhas de dados existentes (manter apenas o header)
         const rowsToRemove = [];
         for (let r = tblRows.length - 1; r >= 1; r--) {
           rowsToRemove.push(tblRows[r]);
         }
         rowsToRemove.forEach(row => installmentTable.removeChild(row));
 
-        // Criar novas linhas
         for (let i = 0; i < half; i++) {
           const leftItem = installments[i];
-          const rightItem = installments[i + half]; // pode ser undefined
+          const rightItem = installments[i + half];
 
-          // Criar uma nova <w:tr>
           const newRow = xmlDoc.createElementNS("http://schemas.openxmlformats.org/wordprocessingml/2006/main", "w:tr");
           newRow.setAttribute("w14:paraId", Math.random().toString(16).substr(2, 8).toUpperCase());
           newRow.setAttribute("w14:textId", "77777777");
 
-          // Célula 0: número esquerda
           newRow.appendChild(makeCell(cellTemplates[0], leftItem.numero, widths[0]));
-          // Célula 1: data esquerda
           newRow.appendChild(makeCell(cellTemplates[1], leftItem.data, widths[1]));
-          // Célula 2: valor esquerda
           newRow.appendChild(makeCell(cellTemplates[2], leftItem.valor, widths[2]));
 
           if (rightItem) {
-            // Célula 3: número direita
             newRow.appendChild(makeCell(cellTemplates[3], rightItem.numero, widths[3]));
-            // Célula 4: data direita
             newRow.appendChild(makeCell(cellTemplates[4], rightItem.data, widths[4]));
-            // Célula 5: valor direita
             newRow.appendChild(makeCell(cellTemplates[5], rightItem.valor, widths[5]));
           } else {
-            // Células vazias
             newRow.appendChild(makeCell(cellTemplates[3], "", widths[3]));
             newRow.appendChild(makeCell(cellTemplates[4], "", widths[4]));
             newRow.appendChild(makeCell(cellTemplates[5], "", widths[5]));
@@ -740,7 +655,6 @@ export const generateContractWord = async (contractData) => {
           installmentTable.appendChild(newRow);
         }
 
-        // Serializar de volta
         xmlContent = xmlSerializer.serializeToString(xmlDoc);
       }
     } catch (rebuildErr) {
@@ -757,10 +671,8 @@ export const generateContractWord = async (contractData) => {
     linebreaks: true,
   });
 
-  // Tabela de parcelas para o Word (caso o template suporte loops {#installments})
   const installments = buildInstallmentRows(contractData);
 
-  // Dados para renderização
   const renderData = {
     MUTUARIA_NAME: (mutuaria_name || "—").toUpperCase(),
     MUTUARIA_CNPJ: mutuaria_cnpj || "—",
@@ -775,7 +687,6 @@ export const generateContractWord = async (contractData) => {
     PROTOCOL: protocol || "—",
     START_DATE: fmtDateBRLocal(start_date),
     INSTALLMENTS: installments,
-    // Fallbacks para nomes alternativos
     VALOR_TOTAL: fmtNum(valor_contratado),
     JUROS: String(taxa_juros || "—"),
   };
@@ -784,14 +695,24 @@ export const generateContractWord = async (contractData) => {
     doc.render(renderData);
   } catch (err) {
     console.warn("Aviso ao renderizar template:", err.message);
-    // Continuar mesmo com erro - pode ser que nem todos os marcadores existam
   }
 
-  const out = doc.getZip().generate({
+  return doc.getZip().generate({
     type: "blob",
     mimeType:
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   });
+};
+
+// ─── Gerador de Word via template original (.docx) ──────────────────────────
+
+export const generateContractWord = async (contractData) => {
+  const {
+    protocol,
+    mutuaria_name,
+  } = contractData;
+
+  const out = await generateContractDocxBlob(contractData);
 
   // ─── ENVIAR PARA SERVIDOR PARA CONVERTER PARA PDF ───
   const safeName = (mutuaria_name || "contrato").replace(/[^a-zA-Z0-9]/g, "_");

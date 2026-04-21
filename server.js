@@ -12,6 +12,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import admin from "firebase-admin";
+import convert from "libreoffice-convert";
 
 // Carregar variáveis de ambiente do .env
 if (fs.existsSync(".env")) {
@@ -639,6 +640,53 @@ app.post("/api/migrations/run-first-installment-day", async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "Erro ao executar migração: " + err.message,
+    });
+  }
+});
+
+// ========================================
+// Converter DOCX → PDF (usando LibreOffice)
+// ========================================
+
+app.post("/api/convert-docx-pdf", upload.single("docx"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Arquivo DOCX não fornecido" });
+    }
+
+    console.log(
+      `📄 [CONVERT] Convertendo DOCX para PDF: ${req.file.originalname}`,
+    );
+
+    // Converter DOCX para PDF
+    const pdfBuffer = await new Promise((resolve, reject) => {
+      convert(req.file.buffer, ".pdf", undefined, (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+
+    if (!pdfBuffer) {
+      throw new Error("Conversão retornou vazio");
+    }
+
+    // Gerar nome do arquivo
+    const fileName = req.file.originalname.replace(".docx", ".pdf");
+
+    // Enviar PDF como response
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    res.send(pdfBuffer);
+
+    console.log(`✅ [CONVERT] PDF convertido com sucesso: ${fileName}`);
+  } catch (err) {
+    console.error("❌ [CONVERT] Erro na conversão:", err.message);
+    res.status(500).json({
+      success: false,
+      error: "Erro ao converter DOCX para PDF: " + err.message,
     });
   }
 });

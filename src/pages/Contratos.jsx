@@ -50,6 +50,17 @@ function ContractFormModal({
   isSaving,
 }) {
   const [activeTab, setActiveTab] = useState(mode);
+
+  // Auto-generate protocol (used as default for new contracts)
+  const autoProtocol = useMemo(() => {
+    if (initial?.protocol) return initial.protocol;
+    const seq = getNextContractProtocolNumber(contracts);
+    return generateContractProtocol(seq);
+  }, [contracts, initial]);
+
+  const [protocol, setProtocol] = useState(autoProtocol);
+  const [protocolEditing, setProtocolEditing] = useState(false);
+
   const [form, setForm] = useState(() => {
     if (!initial) return { ...EMPTY_FORM };
     // Extrair apenas campos que existem na tabela (evitar `clients` do join)
@@ -116,11 +127,7 @@ function ContractFormModal({
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  // Build protocol preview
-  const protocol = useMemo(() => {
-    const seq = getNextContractProtocolNumber(contracts);
-    return generateContractProtocol(seq);
-  }, [contracts]);
+  // Protocol is now managed as local state (protocol, setProtocol) above
 
   // Filtered loan list
   const filteredLoans = useMemo(() => {
@@ -202,11 +209,8 @@ function ContractFormModal({
 
   const handleSave = () => {
     if (!validate()) return;
-    // Ao editar, mantém o protocolo existente; ao criar, gera um novo
-    const proto = initial?.protocol
-      ? initial.protocol
-      : generateContractProtocol(getNextContractProtocolNumber(contracts));
-    onSave({ ...form, protocol: proto });
+    // Use whatever protocol the user has (either auto-generated or manually edited)
+    onSave({ ...form, protocol });
   };
 
   const isFromLoan = activeTab === "from_loan";
@@ -246,8 +250,49 @@ function ContractFormModal({
             </div>
           )}
 
-          {/* Protocol preview */}
-          <div className="protocol-preview">🔖 Protocolo: {protocol}</div>
+          {/* Protocol — editable */}
+          <div className="protocol-preview" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>🔖 Protocolo:</span>
+            {protocolEditing ? (
+              <input
+                type="text"
+                value={protocol}
+                onChange={(e) => setProtocol(e.target.value)}
+                onBlur={() => setProtocolEditing(false)}
+                onKeyDown={(e) => e.key === 'Enter' && setProtocolEditing(false)}
+                autoFocus
+                style={{
+                  background: 'var(--card-bg, #fff)',
+                  border: '1px solid var(--primary, #4a6cf7)',
+                  borderRadius: 6,
+                  padding: '4px 10px',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  color: 'var(--primary, #4a6cf7)',
+                  width: 200,
+                }}
+              />
+            ) : (
+              <>
+                <strong>{protocol}</strong>
+                <button
+                  type="button"
+                  onClick={() => setProtocolEditing(true)}
+                  title="Editar número do contrato"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    padding: '2px 4px',
+                    opacity: 0.7,
+                  }}
+                >
+                  ✏️
+                </button>
+              </>
+            )}
+          </div>
 
           {/* Loan selector (from_loan mode) */}
           {isFromLoan && (
